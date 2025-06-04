@@ -1,28 +1,49 @@
 
-import { useGameContext } from '@/context/GameContext';
-import { GamePhase, MiniGameType } from '@/types/game';
 import { useCallback } from 'react';
+import { useGameStore } from '@/store/gameStore';
+import { GamePhase, MiniGameType } from '@/types/models';
+import { GAME_PHASES } from '@/constants/gamePhases';
 
 /**
  * Hook pour gérer les transitions entre phases de jeu
  * Logique centralisée pour éviter les erreurs de transition
  */
 export const useGamePhases = () => {
-  const { game, currentRound, setPhase, nextPhase: contextNextPhase } = useGameContext();
+  const {
+    currentGame,
+    currentPhase,
+    setCurrentPhase,
+    players,
+    isHost
+  } = useGameStore();
 
   const canAdvancePhase = useCallback((targetPhase: GamePhase): boolean => {
-    if (!game || !currentRound) return false;
+    if (!currentGame || !isHost) return false;
+
+    const currentMiniJeu = currentGame.current_mini_jeu;
+    const allowedPhases = GAME_PHASES[currentMiniJeu] || [];
+    
+    // Vérifier que la phase cible est valide pour ce mini-jeu
+    if (!allowedPhases.includes(targetPhase)) return false;
 
     // Logique de validation selon la phase actuelle
-    switch (game.currentPhase) {
+    switch (currentPhase) {
       case 'intro':
         return targetPhase === 'answering';
       
       case 'answering':
-        return targetPhase === 'voting';
+        // Tous les joueurs doivent avoir répondu
+        const allAnswered = players.every(p => 
+          p.current_phase_state === 'answered' || p.role === 'bot'
+        );
+        return targetPhase === 'voting' && allAnswered;
       
       case 'voting':
-        return targetPhase === 'revealing';
+        // Tous les joueurs doivent avoir voté
+        const allVoted = players.every(p => 
+          p.current_phase_state === 'voted' || p.role === 'bot'
+        );
+        return targetPhase === 'revealing' && allVoted;
       
       case 'revealing':
         return targetPhase === 'result';
@@ -36,48 +57,66 @@ export const useGamePhases = () => {
       default:
         return false;
     }
-  }, [game?.currentPhase]);
+  }, [currentGame, currentPhase, players, isHost]);
 
   const advancePhase = useCallback(() => {
-    if (!game) return false;
+    if (!currentGame) return false;
 
-    const phases: GamePhase[] = ['intro', 'answering', 'voting', 'revealing', 'result'];
-    const currentIndex = phases.indexOf(game.currentPhase);
+    const currentMiniJeu = currentGame.current_mini_jeu;
+    const phases = GAME_PHASES[currentMiniJeu] || [];
+    const currentIndex = phases.indexOf(currentPhase);
     
     if (currentIndex < phases.length - 1) {
       const nextPhase = phases[currentIndex + 1];
       if (canAdvancePhase(nextPhase)) {
-        setPhase(nextPhase);
+        setCurrentPhase(nextPhase);
         return true;
       }
     }
     
     return false;
-  }, [game?.currentPhase, canAdvancePhase, setPhase]);
+  }, [currentGame, currentPhase, canAdvancePhase, setCurrentPhase]);
 
   const goToPhase = useCallback((targetPhase: GamePhase) => {
     if (canAdvancePhase(targetPhase)) {
-      setPhase(targetPhase);
+      setCurrentPhase(targetPhase);
       return true;
     }
     return false;
-  }, [canAdvancePhase, setPhase]);
+  }, [canAdvancePhase, setCurrentPhase]);
 
   const getPhaseProgress = useCallback((): number => {
-    if (!game) return 0;
+    if (!currentGame) return 0;
     
-    const phases: GamePhase[] = ['intro', 'answering', 'voting', 'revealing', 'result'];
-    const currentIndex = phases.indexOf(game.currentPhase);
+    const currentMiniJeu = currentGame.current_mini_jeu;
+    const phases = GAME_PHASES[currentMiniJeu] || [];
+    const currentIndex = phases.indexOf(currentPhase);
     return ((currentIndex + 1) / phases.length) * 100;
-  }, [game?.currentPhase]);
+  }, [currentGame, currentPhase]);
+
+  const getPhaseTimeLimit = useCallback((phase: GamePhase): number => {
+    // Temps limite par phase en secondes
+    const timeLimits: Record<GamePhase, number> = {
+      intro: 10,
+      answering: 60,
+      voting: 30,
+      revealing: 15,
+      result: 10,
+      transition: 5
+    };
+    
+    return timeLimits[phase] || 30;
+  }, []);
 
   return {
-    currentPhase: game?.currentPhase || 'intro',
+    currentPhase,
     canAdvancePhase,
     advancePhase,
     goToPhase,
     getPhaseProgress,
-    isLastPhase: game?.currentPhase === 'result',
-    isFirstPhase: game?.currentPhase === 'intro',
+    getPhaseTimeLimit,
+    isLastPhase: currentPhase === 'result',
+    isFirstPhase: currentPhase === 'intro',
+    isHost
   };
 };
