@@ -10,16 +10,27 @@ import { useDevMode } from '@/hooks/useDevMode';
 import { generateMockGameState } from '@/utils/devMode';
 import { Button } from '@/components/ui/button';
 import { ArrowLeft } from 'lucide-react';
+import { 
+  useCurrentGame, 
+  useCurrentPhase,
+  useIsHost 
+} from '@/store/selectors/gameSelectors';
 
 /**
  * Page de jeu remastérisée avec la nouvelle architecture
- * Utilise le GamePhaseController pour gérer les phases dynamiquement
+ * Utilise le GamePhaseController et les sélecteurs atomiques optimisés
  */
 const GameRemastered = () => {
   const { gameId } = useParams<{ gameId: string }>();
   const navigate = useNavigate();
+  
+  // Sélecteurs atomiques optimisés
+  const currentGame = useCurrentGame();
+  const currentPhase = useCurrentPhase();
+  const isHost = useIsHost();
+  
   const { game, setGame, setCurrentRound } = useGameContext();
-  const { advancePhase, currentPhase } = useGamePhases();
+  const { advancePhase } = useGamePhases();
   const { isDevMode, createDevGame, addMultipleBots } = useDevMode();
 
   // Initialisation du jeu (mock pour le moment)
@@ -68,7 +79,7 @@ const GameRemastered = () => {
     navigate('/dashboard');
   };
 
-  if (!game || !gameId) {
+  if (!currentGame || !gameId) {
     return (
       <AnimatedBackground variant="purple">
         <div className="flex items-center justify-center min-h-screen">
@@ -109,7 +120,7 @@ const GameRemastered = () => {
           
           <div className="text-white text-center">
             <div className="text-sm opacity-80">Partie {gameId}</div>
-            <div className="font-semibold">{game.currentMiniJeu} • {currentPhase}</div>
+            <div className="font-semibold">{currentGame.current_mini_jeu} • {currentPhase}</div>
             {isDevMode && (
               <div className="text-xs bg-orange-500/20 px-2 py-1 rounded mt-1">
                 MODE DEV

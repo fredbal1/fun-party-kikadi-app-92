@@ -9,25 +9,28 @@ import { GamePhaseRenderer } from '@/components/game/GamePhaseRenderer';
 import { DevBotTrigger } from '@/components/dev/DevBotTrigger';
 import { useGameLogic } from '@/hooks/useGameLogic';
 import { PHASE_TIMERS } from '@/constants/gamePhases';
+import { 
+  useCurrentGame, 
+  useCurrentPhase, 
+  usePlayers,
+  useGameProgress 
+} from '@/store/selectors/gameSelectors';
 
 /**
  * Page principale du jeu KIKADI
  * 
- * Composant UI pur qui délègue toute la logique métier au hook useGameLogic.
- * 
- * Note sur le lazy loading : Les composants de phases ne nécessitent pas de lazy()
- * car ils sont légers (< 200 lignes chacun) et sans dépendances lourdes.
- * Le gain de performance serait négligeable vs la complexité ajoutée.
+ * Utilise désormais les sélecteurs atomiques pour optimiser les performances
  */
 const Game: React.FC = () => {
+  // Sélecteurs atomiques optimisés
+  const currentGame = useCurrentGame();
+  const currentPhase = useCurrentPhase();
+  const players = usePlayers();
+  const { currentRound, totalRounds } = useGameProgress();
+  
   const {
     // État
     gameId,
-    currentGame,
-    currentPhase,
-    currentRound,
-    totalRounds,
-    players,
     
     // XP System
     currentXP,

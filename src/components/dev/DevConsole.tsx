@@ -8,6 +8,12 @@ import { useGameContext } from '@/context/GameContext';
 import { useDevMode } from '@/hooks/useDevMode';
 import { useGamePhases } from '@/hooks/useGamePhases';
 import { KIKADI_STRUCTURE } from '@/utils/structureReference';
+import { 
+  useCurrentGame, 
+  useCurrentPhase, 
+  usePlayers,
+  useGameProgress
+} from '@/store/selectors/gameSelectors';
 
 interface DevConsoleProps {
   isOpen: boolean;
@@ -16,10 +22,16 @@ interface DevConsoleProps {
 
 /**
  * Console de développement pour KIKADI
- * Permet de tester et débugger l'application
+ * Utilise les sélecteurs atomiques optimisés
  */
 export const DevConsole: React.FC<DevConsoleProps> = ({ isOpen, onToggle }) => {
-  const { game, players, currentRound } = useGameContext();
+  // Sélecteurs atomiques optimisés
+  const currentGame = useCurrentGame();
+  const currentPhase = useCurrentPhase();
+  const players = usePlayers();
+  const { currentRound } = useGameProgress();
+  
+  const { game, currentRound: contextRound } = useGameContext();
   const { 
     isDevMode, 
     createDevGame, 
@@ -28,7 +40,7 @@ export const DevConsole: React.FC<DevConsoleProps> = ({ isOpen, onToggle }) => {
     simulateBotVotes,
     botsCount 
   } = useDevMode();
-  const { currentPhase, advancePhase, getPhaseProgress } = useGamePhases();
+  const { advancePhase, getPhaseProgress } = useGamePhases();
 
   const [logs, setLogs] = useState<string[]>([]);
 
@@ -96,13 +108,13 @@ export const DevConsole: React.FC<DevConsoleProps> = ({ isOpen, onToggle }) => {
           </CardHeader>
           <CardContent className="space-y-2 text-xs">
             <div className="text-white/80">
-              Partie: {game?.id || 'Aucune'}
+              Partie: {currentGame?.id || 'Aucune'}
             </div>
             <div className="text-white/80">
               Phase: {currentPhase}
             </div>
             <div className="text-white/80">
-              Mini-jeu: {game?.currentMiniJeu || 'N/A'}
+              Mini-jeu: {currentGame?.current_mini_jeu || 'N/A'}
             </div>
             <div className="text-white/80">
               Joueurs: {players.length}
@@ -153,7 +165,7 @@ export const DevConsole: React.FC<DevConsoleProps> = ({ isOpen, onToggle }) => {
             <Button
               onClick={handleAdvancePhase}
               size="sm"
-              disabled={!game}
+              disabled={!currentGame}
               className="w-full bg-orange-500 hover:bg-orange-600 text-xs"
             >
               Phase suivante
@@ -162,7 +174,7 @@ export const DevConsole: React.FC<DevConsoleProps> = ({ isOpen, onToggle }) => {
         </Card>
 
         {/* Progression */}
-        {game && (
+        {currentGame && (
           <Card className="bg-white/10 border-white/20">
             <CardHeader className="pb-2">
               <CardTitle className="text-white text-sm">Progression</CardTitle>

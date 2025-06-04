@@ -1,21 +1,28 @@
 
 import { useCallback } from 'react';
-import { useGameStore } from '@/store/gameStore';
-import { GamePhase, MiniGameType } from '@/types/models';
+import { GamePhase } from '@/types/models';
 import { GAME_PHASES } from '@/constants/gamePhases';
+import { 
+  useCurrentGame, 
+  useCurrentPhase, 
+  usePlayers,
+  useIsHost,
+  useGameStore 
+} from '@/store/selectors/gameSelectors';
 
 /**
  * Hook pour gérer les transitions entre phases de jeu
- * Logique centralisée pour éviter les erreurs de transition
+ * Utilise les sélecteurs atomiques pour optimiser les performances
  */
 export const useGamePhases = () => {
-  const {
-    currentGame,
-    currentPhase,
-    setCurrentPhase,
-    players,
-    isHost
-  } = useGameStore();
+  // Sélecteurs atomiques optimisés
+  const currentGame = useCurrentGame();
+  const currentPhase = useCurrentPhase();
+  const players = usePlayers();
+  const isHost = useIsHost();
+  
+  // Action pour changer de phase
+  const { setCurrentPhase } = useGameStore();
 
   const canAdvancePhase = useCallback((targetPhase: GamePhase): boolean => {
     if (!currentGame || !isHost) return false;

@@ -1,43 +1,37 @@
 
 import { useEffect, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { useGameStore } from '@/store/gameStore';
 import { useGamePhases } from '@/hooks/useGamePhases';
 import { useXPProgression } from '@/hooks/useXPProgression';
 import { useVisualEffects } from '@/components/effects/VisualEffects';
 import { GamePhase, MiniGameType } from '@/types';
 import { toast } from 'react-hot-toast';
+import { 
+  useCurrentGame, 
+  useCurrentPhase, 
+  usePlayers,
+  useGameProgress,
+  useGameStore 
+} from '@/store/selectors/gameSelectors';
 
 /**
  * Hook principal de gestion de la logique d'une partie KIKADI
  * 
- * Centralise toute la logique métier : états, transitions, actions joueur.
- * Gère les interactions avec le store global et prépare l'intégration Supabase.
- * 
- * @returns {Object} Objet contenant :
- *   - État : gameId, currentGame, currentPhase, players, etc.
- *   - Actions : handleSubmitAnswer, handleSubmitVote, handleReaction, etc.
- *   - Utilitaires : canAdvancePhase, composants d'effets visuels
- * 
- * @example
- * ```tsx
- * const {
- *   currentPhase,
- *   handleSubmitAnswer,
- *   handleAdvancePhase
- * } = useGameLogic();
- * ```
+ * Utilise désormais les sélecteurs atomiques optimisés pour éviter
+ * les re-rendus inutiles et améliorer les performances.
  */
 export const useGameLogic = () => {
   const { gameId } = useParams();
   const navigate = useNavigate();
   
-  // Store global
+  // Sélecteurs atomiques optimisés
+  const currentGame = useCurrentGame();
+  const currentPhase = useCurrentPhase();
+  const players = usePlayers();
+  const { currentRound, totalRounds } = useGameProgress();
+  
+  // Actions du store (uniquement celles nécessaires)
   const {
-    currentGame,
-    currentPhase,
-    currentRound,
-    players,
     setCurrentGame,
     setCurrentPhase,
     setCurrentRound
@@ -62,12 +56,11 @@ export const useGameLogic = () => {
   } = useVisualEffects();
 
   // État dérivé
-  const totalRounds = currentGame?.nb_manches || 5;
   const isLastRound = currentRound >= totalRounds;
 
   /**
    * Initialisation du jeu au montage du composant
-   * TODO: Remplacer par chargement Supabase réel via gameService.loadGame()
+   * TODO: Remplacer par chargement Supabase réel via gameService.fetchGameFromDb()
    */
   useEffect(() => {
     if (gameId && !currentGame) {
@@ -95,15 +88,11 @@ export const useGameLogic = () => {
 
   /**
    * Soumet une réponse de joueur pour la phase courante
-   * 
-   * @param {string} answer - La réponse du joueur (texte libre)
-   * @throws {Error} Si la soumission échoue
-   * 
-   * TODO: Intégrer playerService.submitAnswer(gameId, playerId, answer)
+   * TODO: Intégrer gameService.savePlayerAnswer()
    */
   const handleSubmitAnswer = useCallback(async (answer: string) => {
     try {
-      // TODO: Utiliser playerService.submitAnswer(answer)
+      // TODO: Utiliser gameService.savePlayerAnswer(answer)
       console.log('Answer submitted:', answer);
       
       awardAnswerXP();
@@ -121,15 +110,11 @@ export const useGameLogic = () => {
 
   /**
    * Soumet un vote/choix du joueur pour la phase de vote
-   * 
-   * @param {string} targetId - ID du joueur/réponse ciblé(e)
-   * @throws {Error} Si le vote échoue
-   * 
-   * TODO: Intégrer playerService.submitVote(gameId, playerId, targetId)
+   * TODO: Intégrer gameService.savePlayerVote()
    */
   const handleSubmitVote = useCallback(async (targetId: string) => {
     try {
-      // TODO: Utiliser playerService.submitVote(targetId)
+      // TODO: Utiliser gameService.savePlayerVote(targetId)
       console.log('Vote submitted:', targetId);
       
       toast.success('Vote enregistré !');
@@ -146,11 +131,7 @@ export const useGameLogic = () => {
 
   /**
    * Envoie une réaction emoji en temps réel
-   * 
-   * @param {string} emoji - L'emoji à envoyer (ex: "😂", "🔥")
-   * @throws {Error} Si l'envoi de réaction échoue
-   * 
-   * TODO: Intégrer realtimeService.sendReaction(gameId, playerId, emoji)
+   * TODO: Intégrer realtimeService.sendReaction()
    */
   const handleReaction = useCallback(async (emoji: string) => {
     try {
@@ -166,11 +147,7 @@ export const useGameLogic = () => {
 
   /**
    * Fait avancer manuellement la phase (bouton host uniquement)
-   * Gère la logique de fin de partie et transitions entre manches
-   * 
-   * @throws {Error} Si la transition échoue
-   * 
-   * TODO: Synchroniser avec gameService.updateGamePhase()
+   * TODO: Synchroniser avec gameService.updateGameInDb()
    */
   const handleAdvancePhase = useCallback(() => {
     const success = advancePhase();
@@ -206,7 +183,6 @@ export const useGameLogic = () => {
 
   /**
    * Retourne au dashboard principal (abandon de partie)
-   * 
    * TODO: Intégrer gameService.leaveGame() si nécessaire
    */
   const handleBackToDashboard = useCallback(() => {
@@ -215,9 +191,7 @@ export const useGameLogic = () => {
 
   /**
    * Réinitialise complètement l'état du jeu
-   * Utilisé en cas d'erreur critique ou redémarrage
-   * 
-   * TODO: Synchroniser avec gameService.resetGame()
+   * TODO: Synchroniser avec gameService.cleanupGameData()
    */
   const resetGame = useCallback(() => {
     setCurrentGame(null);
@@ -228,15 +202,13 @@ export const useGameLogic = () => {
 
   /**
    * Passe automatiquement à la phase suivante selon la logique du mini-jeu
-   * 
-   * @returns {boolean} true si la transition a réussi, false sinon
    */
   const goToNextPhase = useCallback(() => {
     return advancePhase();
   }, [advancePhase]);
 
   return {
-    // État de la partie
+    // État de la partie (via sélecteurs atomiques)
     gameId,
     currentGame,
     currentPhase,

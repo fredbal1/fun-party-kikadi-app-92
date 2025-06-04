@@ -1,13 +1,13 @@
 
 /// <reference types="@testing-library/jest-dom" />
 
-// Configuration des types pour les tests
+// Configuration des types pour les tests avec Vitest
 declare global {
-  namespace jest {
-    interface Matchers<R> {
-      toBeInTheDocument(): R;
-      toHaveClass(className: string): R;
-      toHaveAttribute(attr: string, value?: string): R;
+  namespace Vi {
+    interface JestAssertion<T = any> {
+      toBeInTheDocument(): T;
+      toHaveClass(className: string): T;
+      toHaveAttribute(attr: string, value?: string): T;
     }
   }
 }
