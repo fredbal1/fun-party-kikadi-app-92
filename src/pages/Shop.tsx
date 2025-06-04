@@ -10,39 +10,29 @@ import { ArrowLeft, Coins, ShoppingBag, Star } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useGameStore } from '@/store/gameStore';
 import { toast } from 'react-hot-toast';
-
-interface ShopItem {
-  id: string;
-  type: 'avatar' | 'titre' | 'effet';
-  nom: string;
-  description: string;
-  prix: number;
-  rareté: 'common' | 'rare' | 'legendary';
-  emoji?: string;
-  preview?: string;
-}
+import { ShopItem } from '@/types';
 
 const Shop = () => {
   const navigate = useNavigate();
   const { currentUser, updateUserCoins } = useGameStore();
   const [purchasedItems, setPurchasedItems] = useState<string[]>([]);
 
-  // Mock shop items
+  // Mock shop items - updated with rarete property
   const shopItems: ShopItem[] = [
     // Avatars
-    { id: 'avatar1', type: 'avatar', nom: 'Gamer Pro', description: 'Pour les vrais gamers', prix: 50, rareté: 'common', emoji: '🎮' },
-    { id: 'avatar2', type: 'avatar', nom: 'Licorne Magique', description: 'Brillez de mille feux', prix: 120, rareté: 'rare', emoji: '🦄' },
-    { id: 'avatar3', type: 'avatar', nom: 'Dragon Légendaire', description: 'Avatar ultra rare', prix: 300, rareté: 'legendary', emoji: '🐉' },
+    { id: 'avatar1', type: 'avatar', nom: 'Gamer Pro', description: 'Pour les vrais gamers', prix: 50, rarete: 'common', emoji: '🎮' },
+    { id: 'avatar2', type: 'avatar', nom: 'Licorne Magique', description: 'Brillez de mille feux', prix: 120, rarete: 'rare', emoji: '🦄' },
+    { id: 'avatar3', type: 'avatar', nom: 'Dragon Légendaire', description: 'Avatar ultra rare', prix: 300, rarete: 'legendary', emoji: '🐉' },
     
     // Titres
-    { id: 'titre1', type: 'titre', nom: 'Roi du Bluff', description: 'Titre pour les menteurs pros', prix: 80, rareté: 'common' },
-    { id: 'titre2', type: 'titre', nom: 'Détective Privé', description: 'Rien ne vous échappe', prix: 150, rareté: 'rare' },
-    { id: 'titre3', type: 'titre', nom: 'Maître du Jeu', description: 'Titre légendaire réservé aux experts', prix: 500, rareté: 'legendary' },
+    { id: 'titre1', type: 'titre', nom: 'Roi du Bluff', description: 'Titre pour les menteurs pros', prix: 80, rarete: 'common' },
+    { id: 'titre2', type: 'titre', nom: 'Détective Privé', description: 'Rien ne vous échappe', prix: 150, rarete: 'rare' },
+    { id: 'titre3', type: 'titre', nom: 'Maître du Jeu', description: 'Titre légendaire réservé aux experts', prix: 500, rarete: 'legendary' },
     
     // Effets visuels
-    { id: 'effet1', type: 'effet', nom: 'Confettis Arc-en-ciel', description: 'Explosion colorée à chaque victoire', prix: 100, rareté: 'common' },
-    { id: 'effet2', type: 'effet', nom: 'Flammes Épiques', description: 'Des flammes impressionnantes', prix: 200, rareté: 'rare' },
-    { id: 'effet3', type: 'effet', nom: 'Portail Dimensionnel', description: 'Effet légendaire saisissant', prix: 400, rareté: 'legendary' }
+    { id: 'effet1', type: 'effet', nom: 'Confettis Arc-en-ciel', description: 'Explosion colorée à chaque victoire', prix: 100, rarete: 'common' },
+    { id: 'effet2', type: 'effet', nom: 'Flammes Épiques', description: 'Des flammes impressionnantes', prix: 200, rarete: 'rare' },
+    { id: 'effet3', type: 'effet', nom: 'Portail Dimensionnel', description: 'Effet légendaire saisissant', prix: 400, rarete: 'legendary' }
   ];
 
   const handlePurchase = (item: ShopItem) => {
@@ -68,23 +58,6 @@ const Shop = () => {
     toast.success(`${item.nom} acheté avec succès ! 🎉`, {
       className: 'bg-green-500 text-white'
     });
-  };
-
-  const getRarityColor = (rarity: string) => {
-    switch (rarity) {
-      case 'common': return 'from-gray-400 to-gray-600';
-      case 'rare': return 'from-blue-400 to-purple-600';
-      case 'legendary': return 'from-yellow-400 to-orange-600';
-      default: return 'from-gray-400 to-gray-600';
-    }
-  };
-
-  const getRarityBadge = (rarity: string) => {
-    switch (rarity) {
-      case 'common': return <Badge className="bg-gray-500">Commun</Badge>;
-      case 'rare': return <Badge className="bg-blue-500">Rare</Badge>;
-      case 'legendary': return <Badge className="bg-yellow-500 text-black">Légendaire</Badge>;
-    }
   };
 
   const getFilteredItems = (type: ShopItem['type']) => {

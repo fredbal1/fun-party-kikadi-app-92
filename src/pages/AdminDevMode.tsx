@@ -138,7 +138,7 @@ const AdminDevMode = () => {
   };
 
   return (
-    <AnimatedBackground variant="red">
+    <AnimatedBackground variant="purple">
       <div className="min-h-screen px-6 py-8">
         {/* Header */}
         <motion.div
@@ -250,7 +250,7 @@ const AdminDevMode = () => {
                   </CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-4">
-                  <DevBotAdder onAddBot={addBot} disabled={bots.length >= 7} />
+                  <DevBotAdder onAddBot={addBot} />
                   
                   <div className="space-y-2">
                     {bots.map((bot, index) => (

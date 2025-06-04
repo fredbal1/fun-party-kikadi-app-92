@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { AnimatedBackground } from '@/components/animations/AnimatedBackground';
@@ -13,7 +14,7 @@ import { KiKaDiGame } from '@/components/games/KiKaDiGame';
 import { KiDiVraiGame } from '@/components/games/KiDiVraiGame';
 import { KiDejaGame } from '@/components/games/KiDejaGame';
 import { KiDeNousGame } from '@/components/games/KiDeNousGame';
-import { GamePhase, MiniJeu } from '@/types';
+import { GamePhase, MiniGame } from '@/types';
 import { PHASE_TIMERS } from '@/constants/gamePhases';
 import { toast } from 'react-hot-toast';
 
@@ -42,7 +43,7 @@ const Game = () => {
   } = useVisualEffects();
 
   // Game State
-  const [currentMiniJeu, setCurrentMiniJeu] = useState<MiniJeu>('kikadi');
+  const [currentMiniJeu, setCurrentMiniJeu] = useState<MiniGame>('kikadi');
   const [hasAnswered, setHasAnswered] = useState(false);
   const [selectedPlayer, setSelectedPlayer] = useState<string | null>(null);
   const [currentRound, setCurrentRound] = useState(1);
@@ -93,7 +94,7 @@ const Game = () => {
           setCurrentPhase('transition');
           setCurrentRound(prev => prev + 1);
           // Changer de mini-jeu pour la prochaine manche
-          const jeux: MiniJeu[] = ['kikadi', 'kidivrai', 'kideja', 'kidenous'];
+          const jeux: MiniGame[] = ['kikadi', 'kidivrai', 'kideja', 'kidenous'];
           const nextJeu = jeux[currentRound % jeux.length];
           setCurrentMiniJeu(nextJeu);
         } else {
@@ -289,7 +290,7 @@ const Game = () => {
             )}
 
             {/* Next phase button for certain phases */}
-            {(currentPhase === 'intro' || currentPhase === 'results') && (
+            {(currentPhase === 'intro' || currentPhase === 'result') && (
               <motion.div
                 className="mt-8"
                 initial={{ opacity: 0 }}
@@ -301,7 +302,7 @@ const Game = () => {
                   className="w-full bg-white text-purple-600 hover:bg-white/90 font-bold"
                   size="lg"
                 >
-                  {currentPhase === 'results' 
+                  {currentPhase === 'result' 
                     ? currentRound < totalRounds ? 'Manche suivante' : 'Voir les résultats finaux'
                     : 'Continuer'
                   }
