@@ -36,6 +36,13 @@ export const GamePhaseController: React.FC<GamePhaseControllerProps> = ({
   const currentMiniJeu = game.currentMiniJeu;
   const currentPhase = game.currentPhase;
 
+  // Wrapper pour l'onPhaseComplete qui ne prend pas de paramètre
+  const handlePhaseComplete = () => {
+    if (onPhaseComplete) {
+      onPhaseComplete(currentPhase);
+    }
+  };
+
   /**
    * Sélectionne le composant approprié selon le mini-jeu et la phase
    */
@@ -43,7 +50,7 @@ export const GamePhaseController: React.FC<GamePhaseControllerProps> = ({
     const commonProps = {
       gameId,
       roundData: currentRound,
-      onPhaseComplete: onPhaseComplete || (() => {}),
+      onPhaseComplete: handlePhaseComplete,
     };
 
     switch (currentMiniJeu) {
