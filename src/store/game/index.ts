@@ -34,5 +34,5 @@ export type { GameState, GameActions };
 export const useFullGameState = () => useGameStore();
 
 // Re-exports pour compatibilité (aliases corrects)
-export { GameState as GameStoreState } from './state';
-export { GameActions as GameStoreActions } from './actions';
+export type { GameState as GameStoreState } from './state';
+export type { GameActions as GameStoreActions } from './actions';
