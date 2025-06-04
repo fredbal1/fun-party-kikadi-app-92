@@ -2,10 +2,10 @@
 import { MiniJeu, GamePhase } from '@/types';
 
 export const GAME_PHASES: Record<string, GamePhase[]> = {
-  kikadi: ['intro', 'answering', 'voting', 'revealing', 'results', 'transition'],
-  kidivrai: ['intro', 'answering', 'voting', 'revealing', 'results', 'transition'],
-  kideja: ['intro', 'answering', 'voting', 'revealing', 'results', 'transition'],
-  kidenous: ['intro', 'answering', 'voting', 'revealing', 'results', 'transition'],
+  kikadi: ['intro', 'answering', 'voting', 'revealing', 'result', 'transition'],
+  kidivrai: ['intro', 'answering', 'voting', 'revealing', 'result', 'transition'],
+  kideja: ['intro', 'answering', 'voting', 'revealing', 'result', 'transition'],
+  kidenous: ['intro', 'answering', 'voting', 'revealing', 'result', 'transition'],
 };
 
 export const MINI_JEUX: Record<MiniJeu, { nom: string; description: string; emoji: string }> = {
@@ -74,6 +74,6 @@ export const PHASE_TIMERS = {
   answering: 60,
   voting: 30,
   revealing: 10,
-  results: 15,
+  result: 15,
   transition: 5
 };

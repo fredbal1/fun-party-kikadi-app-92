@@ -1,6 +1,6 @@
 
 import { useGameStore } from '@/store/gameStore';
-import { GamePhase, Player, Game, Round } from '@/types';
+import { GamePhase, Player, Game } from '@/types';
 
 /**
  * useGameState — Gère la logique globale d'une partie en cours.
@@ -42,9 +42,9 @@ export const useGameState = () => {
     // Logic to check if all players are ready for next phase
     switch (currentPhase) {
       case 'answering':
-        return players.every(player => player.current_phase_state === 'answering');
+        return players.every(player => player.current_phase_state === 'answered');
       case 'voting':
-        return players.every(player => player.current_phase_state === 'voting');
+        return players.every(player => player.current_phase_state === 'voted');
       default:
         return true;
     }

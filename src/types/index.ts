@@ -13,11 +13,21 @@ export interface User {
   titre?: string;
 }
 
+// Types pour les modes de jeu
+export type GameMode = 'classique' | 'bluff' | 'mixte';
+
+// Types pour les ambiances
+export type Ambiance = 'safe' | 'intime' | 'no_filter';
+
+// Types pour les mini-jeux
+export type MiniGame = 'kikadi' | 'kidivrai' | 'kideja' | 'kidenous';
+export type MiniJeu = MiniGame; // Alias pour compatibilité
+
 export interface Game {
   id: string;
   host_id: string;
-  mode: 'classique' | 'bluff' | 'mixte';
-  ambiance: 'safe' | 'intime' | 'no_filter';
+  mode: GameMode;
+  ambiance: Ambiance;
   status: 'waiting' | 'running' | 'ended';
   created_at: string;
   mini_jeux: string[];
@@ -41,7 +51,7 @@ export interface Round {
   id: string;
   game_id: string;
   order: number;
-  mini_jeu: 'kikadi' | 'kidivrai' | 'kideja' | 'kidenous';
+  mini_jeu: MiniGame;
   question_id: string;
   state: 'waiting' | 'answering' | 'voting' | 'revealing' | 'result';
   question?: Question;
@@ -51,8 +61,8 @@ export interface Question {
   id: string;
   content: string;
   type: 'texte' | 'choix' | 'verite';
-  ambiance: 'safe' | 'intime' | 'no_filter';
-  jeu: 'kikadi' | 'kidivrai' | 'kideja' | 'kidenous';
+  ambiance: Ambiance;
+  jeu: MiniGame;
   validee: boolean;
 }
 
@@ -88,6 +98,7 @@ export interface ShopItem {
   rarete: 'common' | 'rare' | 'legendary';
   emoji?: string;
   preview?: string;
+  icon?: string;
 }
 
 export interface Inventory {
@@ -97,18 +108,14 @@ export interface Inventory {
   owned_at: string;
 }
 
-// Types pour les phases de jeu
+// Types pour les phases de jeu - corrigés
 export type GamePhase = 
   | 'intro'
-  | 'question'
-  | 'answer'
-  | 'vote'
-  | 'reveal'
+  | 'answering'
+  | 'voting'
+  | 'revealing'
   | 'result'
   | 'transition';
-
-// Types pour les mini-jeux
-export type MiniGame = 'kikadi' | 'kidivrai' | 'kideja' | 'kidenous';
 
 // Types pour les effets visuels
 export type VisualEffect = 'confetti' | 'shake' | 'zoom' | 'pulse' | 'none';
@@ -116,7 +123,7 @@ export type VisualEffect = 'confetti' | 'shake' | 'zoom' | 'pulse' | 'none';
 // Types pour les réactions
 export type ReactionType = '😂' | '😮' | '🤔' | '😱' | '👏' | '🔥' | '💯' | '🎯';
 
-// Types pour les animations
+// Types pour les animations - étendu
 export type AnimationVariant = 'blue' | 'purple' | 'orange' | 'green' | 'red' | 'rainbow';
 
 // Types pour l'authentification

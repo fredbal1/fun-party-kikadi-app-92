@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { AnimatedBackground } from '@/components/animations/AnimatedBackground';
@@ -85,11 +84,11 @@ const Game = () => {
         setCurrentPhase('revealing');
         break;
       case 'revealing':
-        setCurrentPhase('results');
+        setCurrentPhase('result');
         triggerConfetti();
         awardCorrectGuessXP();
         break;
-      case 'results':
+      case 'result':
         if (currentRound < totalRounds) {
           setCurrentPhase('transition');
           setCurrentRound(prev => prev + 1);

@@ -1,6 +1,6 @@
 
 import { create } from 'zustand';
-import { User, Game, Player } from '@/types';
+import { User, Game, Player, GamePhase } from '@/types';
 
 interface GameStore {
   // User state
@@ -21,17 +21,29 @@ interface GameStore {
   updatePlayer: (playerId: string, updates: Partial<Player>) => void;
   
   // Game flow state
-  currentPhase: string;
-  setCurrentPhase: (phase: string) => void;
+  currentPhase: GamePhase;
+  setCurrentPhase: (phase: GamePhase) => void;
   currentRound: number;
   setCurrentRound: (round: number) => void;
+  roundNumber: number;
+  setRoundNumber: (round: number) => void;
+  timeRemaining: number;
+  setTimeRemaining: (time: number) => void;
+  isHost: boolean;
+  setIsHost: (isHost: boolean) => void;
   
   // Real-time state
   isConnected: boolean;
   setIsConnected: (connected: boolean) => void;
   
+  // Shop state
+  inventory: string[];
+  addToInventory: (itemId: string) => void;
+  
   // Utility actions
   resetGameState: () => void;
+  nextPhase: () => void;
+  resetGame: () => void;
 }
 
 export const useGameStore = create<GameStore>((set, get) => ({
@@ -69,10 +81,22 @@ export const useGameStore = create<GameStore>((set, get) => ({
   setCurrentPhase: (phase) => set({ currentPhase: phase }),
   currentRound: 1,
   setCurrentRound: (round) => set({ currentRound: round }),
+  roundNumber: 1,
+  setRoundNumber: (round) => set({ roundNumber: round }),
+  timeRemaining: 0,
+  setTimeRemaining: (time) => set({ timeRemaining: time }),
+  isHost: false,
+  setIsHost: (isHost) => set({ isHost }),
   
   // Real-time state
   isConnected: false,
   setIsConnected: (connected) => set({ isConnected: connected }),
+  
+  // Shop state
+  inventory: [],
+  addToInventory: (itemId) => set((state) => ({
+    inventory: [...state.inventory, itemId]
+  })),
   
   // Utility actions
   resetGameState: () => set({
@@ -80,6 +104,28 @@ export const useGameStore = create<GameStore>((set, get) => ({
     players: [],
     currentPhase: 'intro',
     currentRound: 1,
+    roundNumber: 1,
+    timeRemaining: 0,
     isConnected: false
-  })
+  }),
+  
+  nextPhase: () => {
+    const { currentPhase } = get();
+    const phases: GamePhase[] = ['intro', 'answering', 'voting', 'revealing', 'result', 'transition'];
+    const currentIndex = phases.indexOf(currentPhase);
+    const nextIndex = (currentIndex + 1) % phases.length;
+    set({ currentPhase: phases[nextIndex] });
+  },
+  
+  resetGame: () => {
+    set({
+      currentGame: null,
+      players: [],
+      currentPhase: 'intro',
+      currentRound: 1,
+      roundNumber: 1,
+      timeRemaining: 0,
+      isConnected: false
+    });
+  }
 }));
