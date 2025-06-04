@@ -51,20 +51,23 @@ export const ReactionSystem = ({ onReaction, disabled = false, className = '' }:
 
         return (
           <motion.div key={reaction.id} className="relative">
-            <Button
-              onClick={() => handleReaction(reaction)}
-              disabled={disabled}
-              variant="outline"
-              size="sm"
-              className={`border-white/30 text-white hover:bg-white/10 transition-all ${
-                isSelected ? 'bg-white/20 scale-110' : ''
-              }`}
+            <motion.div
               whileHover={{ scale: 1.1 }}
               whileTap={{ scale: 0.95 }}
             >
-              <span className="text-lg mr-2">{reaction.emoji}</span>
-              <IconComponent className={`h-4 w-4 ${reaction.color}`} />
-            </Button>
+              <Button
+                onClick={() => handleReaction(reaction)}
+                disabled={disabled}
+                variant="outline"
+                size="sm"
+                className={`border-white/30 text-white hover:bg-white/10 transition-all ${
+                  isSelected ? 'bg-white/20 scale-110' : ''
+                }`}
+              >
+                <span className="text-lg mr-2">{reaction.emoji}</span>
+                <IconComponent className={`h-4 w-4 ${reaction.color}`} />
+              </Button>
+            </motion.div>
             
             <AnimatePresence>
               {isSelected && (

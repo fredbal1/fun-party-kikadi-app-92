@@ -91,7 +91,7 @@ export const ShakeEffect = ({ trigger, children, intensity = 'medium' }: ShakePr
 // Hook pour déclencher des effets facilement
 export const useVisualEffects = () => {
   const [showConfetti, setShowConfetti] = useState(false);
-  const [shakeState, setShakeState] = useState({ trigger: false, intensity: 'medium' as const });
+  const [shakeState, setShakeState] = useState<{ trigger: boolean; intensity: 'light' | 'medium' | 'strong' }>({ trigger: false, intensity: 'medium' });
 
   const triggerConfetti = () => {
     setShowConfetti(true);
