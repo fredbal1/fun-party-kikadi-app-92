@@ -1,154 +1,100 @@
 
-// Types centralisés pour l'application KIKADI
+/**
+ * Point d'entrée centralisé pour tous les types KIKADI
+ * Import depuis ce fichier pour avoir accès à tous les types
+ */
 
-export interface User {
-  id: string;
-  pseudo: string;
-  email: string;
-  role: 'admin' | 'joueur' | 'bot';
-  xp: number;
-  pieces: number;
-  niveau: number;
-  avatar?: string;
-  titre?: string;
-}
+// === ENTITÉS MÉTIER ===
+export type {
+  UUID,
+  Timestamp,
+  User,
+  Game,
+  Round,
+  Player,
+  Question,
+  Answer,
+  Vote,
+  Score,
+  ShopItem,
+  Inventory,
+  GameSettings,
+  Bot,
+  GameStats,
+  Notification,
+  ConnectionStatus
+} from './models';
 
-// Types pour les modes de jeu
-export type GameMode = 'classique' | 'bluff' | 'mixte';
+// === VUES ENRICHIES ===
+export type {
+  PlayerWithUser,
+  GameWithPlayers,
+  RoundWithQuestion,
+  VoteWithPlayer,
+  AnswerWithPlayer
+} from './models';
 
-// Types pour les ambiances
-export type Ambiance = 'safe' | 'intime' | 'no_filter';
+// === ÉNUMÉRATIONS ===
+export type {
+  GamePhase,
+  GameMode,
+  AmbianceType,
+  MiniGameType,
+  GameStatus,
+  UserRole,
+  QuestionType,
+  VoteType,
+  ShopItemType,
+  ItemRarity,
+  ReactionType,
+  VisualEffectType,
+  NotificationType,
+  AnimationVariant
+} from './enums';
 
-// Types pour les mini-jeux
-export type MiniGame = 'kikadi' | 'kidivrai' | 'kideja' | 'kidenous';
-export type MiniJeu = MiniGame; // Alias pour compatibilité
+// === TYPES D'INPUT SUPABASE ===
+export type {
+  NewGameInput,
+  UpdateGameStateInput,
+  JoinGameInput,
+  NewPlayerInput,
+  UpdatePlayerStatusInput,
+  UpdatePlayerScoreInput,
+  NewQuestionInput,
+  UpdateQuestionInput,
+  SubmitAnswerInput,
+  SubmitVoteInput,
+  NewShopItemInput,
+  PurchaseItemInput,
+  EquipItemInput,
+  UpdateUserProfileInput,
+  UpdateUserProgressInput,
+  CreateBotInput,
+  BotActionInput,
+  HeartbeatInput,
+  ReportPlayerInput
+} from './inputs';
 
-export interface Game {
-  id: string;
-  host_id: string;
-  mode: GameMode;
-  ambiance: Ambiance;
-  status: 'waiting' | 'running' | 'ended';
-  created_at: string;
-  mini_jeux: string[];
-  nb_manches: number;
-}
+// === TYPES DE FILTRES ===
+export type {
+  QuestionFilters,
+  GameFilters,
+  ShopItemFilters
+} from './inputs';
 
-export interface Player {
-  id: string;
-  user_id: string;
-  game_id: string;
-  is_ready: boolean;
-  is_host: boolean;
-  score: number;
-  current_phase_state: string;
-  reaction?: string;
-  effet_active?: string;
-  user?: User;
-}
+// === TYPES UI (existants) ===
+export type {
+  VisualEffect
+} from './ui';
 
-export interface Round {
-  id: string;
-  game_id: string;
-  order: number;
-  mini_jeu: MiniGame;
-  question_id: string;
-  state: 'waiting' | 'answering' | 'voting' | 'revealing' | 'result';
-  question?: Question;
-}
+// === TYPES LEGACY (à migrer progressivement) ===
+export type {
+  GameState as LegacyGameState,
+  PlayerState as LegacyPlayerState,
+  MiniGame,
+  Ambiance
+} from './game';
 
-export interface Question {
-  id: string;
-  content: string;
-  type: 'texte' | 'choix' | 'verite';
-  ambiance: Ambiance;
-  jeu: MiniGame;
-  validee: boolean;
-}
-
-export interface Answer {
-  id: string;
-  player_id: string;
-  round_id: string;
-  content: string;
-  is_bluff?: boolean;
-}
-
-export interface Vote {
-  id: string;
-  voter_id: string;
-  target_id: string;
-  round_id: string;
-  vote_type: 'association' | 'bluff' | 'categorie';
-}
-
-export interface Score {
-  id: string;
-  round_id: string;
-  player_id: string;
-  points: number;
-}
-
-export interface ShopItem {
-  id: string;
-  type: 'avatar' | 'titre' | 'effet';
-  nom: string;
-  description: string;
-  prix: number;
-  rarete: 'common' | 'rare' | 'legendary';
-  emoji?: string;
-  preview?: string;
-  icon?: string;
-}
-
-export interface Inventory {
-  id: string;
-  user_id: string;
-  item_id: string;
-  owned_at: string;
-}
-
-// Types pour les phases de jeu - corrigés
-export type GamePhase = 
-  | 'intro'
-  | 'answering'
-  | 'voting'
-  | 'revealing'
-  | 'result'
-  | 'transition';
-
-// Types pour les effets visuels
-export type VisualEffect = 'confetti' | 'shake' | 'zoom' | 'pulse' | 'none';
-
-// Types pour les réactions
-export type ReactionType = '😂' | '😮' | '🤔' | '😱' | '👏' | '🔥' | '💯' | '🎯';
-
-// Types pour les animations - étendu
-export type AnimationVariant = 'blue' | 'purple' | 'orange' | 'green' | 'red' | 'rainbow';
-
-// Types pour l'authentification
-export interface AuthState {
-  user: User | null;
-  isLoading: boolean;
-  isAuthenticated: boolean;
-}
-
-// Types pour les statistiques
-export interface PlayerStats {
-  partiesJouees: number;
-  partiesGagnees: number;
-  pointsTotal: number;
-  meilleurScore: number;
-  tempsMoyenParPartie: number;
-  jeuFavori: MiniGame;
-}
-
-// Types pour les notifications
-export interface Notification {
-  id: string;
-  type: 'info' | 'success' | 'warning' | 'error';
-  title: string;
-  message: string;
-  timestamp: string;
-  read: boolean;
-}
+// === ALIASES POUR COMPATIBILITÉ ===
+export type { MiniGameType as MiniJeu } from './enums';
+export type { AmbianceType as Ambiance } from './enums';
