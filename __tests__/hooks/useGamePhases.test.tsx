@@ -1,8 +1,7 @@
 
-import { describe, it, expect, beforeEach } from 'vitest';
+import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { renderHook, act } from '@testing-library/react';
 import { useGamePhases } from '@/hooks/useGamePhases';
-import { useGameStore } from '@/store/gameStore';
 
 // Mock du store
 const mockGameStore = {
@@ -20,8 +19,15 @@ const mockGameStore = {
   isHost: true
 };
 
+vi.mock('@/store/selectors/gameSelectors', () => ({
+  useCurrentGame: () => mockGameStore.currentGame,
+  useCurrentPhase: () => mockGameStore.currentPhase,
+  usePlayers: () => mockGameStore.players,
+  useIsHost: () => mockGameStore.isHost
+}));
+
 vi.mock('@/store/gameStore', () => ({
-  useGameStore: () => mockGameStore
+  useGameStore: () => ({ setCurrentPhase: mockGameStore.setCurrentPhase })
 }));
 
 describe('useGamePhases', () => {

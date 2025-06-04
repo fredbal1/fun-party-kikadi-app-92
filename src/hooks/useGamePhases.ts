@@ -6,9 +6,9 @@ import {
   useCurrentGame, 
   useCurrentPhase, 
   usePlayers,
-  useIsHost,
-  useGameStore 
+  useIsHost 
 } from '@/store/selectors/gameSelectors';
+import { useGameStore } from '@/store/gameStore';
 
 /**
  * Hook pour gérer les transitions entre phases de jeu
