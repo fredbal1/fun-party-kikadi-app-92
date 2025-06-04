@@ -1,7 +1,6 @@
-
 # 🎮 KIKADI - Le jeu social qui crée du lien
 
-[![CI/CD Pipeline](https://github.com/your-username/kikadi/actions/workflows/ci.yml/badge.svg)](https://github.com/your-username/kikadi/actions/workflows/ci.yml)
+![CI](https://github.com/fredbal1/fun-party-kikadi-app-06/actions/workflows/ci.yml/badge.svg)
 [![Lovable](https://img.shields.io/badge/Built%20with-Lovable-ff69b4.svg)](https://lovable.dev)
 
 ## 📋 À propos du projet
@@ -250,4 +249,3 @@ Ce projet est sous licence MIT. Voir le fichier `LICENSE` pour plus de détails.
 ---
 
 💡 **Développé avec ❤️ sur [Lovable](https://lovable.dev)**
-
