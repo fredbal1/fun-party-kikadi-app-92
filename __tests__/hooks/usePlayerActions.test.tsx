@@ -1,6 +1,7 @@
 
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { renderHook, act } from '@testing-library/react';
+import '@testing-library/jest-dom';
 import { usePlayerActions } from '@/hooks/usePlayerActions';
 
 // Mock des stores et sélecteurs
