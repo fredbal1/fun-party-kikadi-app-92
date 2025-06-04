@@ -1,0 +1,69 @@
+
+# Workflow GitHub Actions pour KIKADI
+# Déclenché sur chaque push/PR vers main
+name: CI/CD Pipeline
+
+on:
+  push:
+    branches: [main, master]
+  pull_request:
+    branches: [main, master]
+
+jobs:
+  # Job principal : test, lint et build
+  test-and-build:
+    runs-on: ubuntu-latest
+    
+    strategy:
+      matrix:
+        node-version: [18.x, 20.x]
+    
+    steps:
+      # Récupération du code
+      - name: Checkout code
+        uses: actions/checkout@v4
+        
+      # Installation de Node.js
+      - name: Setup Node.js ${{ matrix.node-version }}
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ matrix.node-version }}
+          cache: 'npm'
+          
+      # Installation des dépendances
+      - name: Install dependencies
+        run: npm ci
+        
+      # Vérification du linting avec Prettier
+      - name: Check code formatting
+        run: npm run format:check
+        
+      # Exécution des tests avec Vitest
+      - name: Run tests
+        run: npm run test:ci
+        
+      # Build de l'application avec Vite
+      - name: Build application
+        run: npm run build
+        
+      # Upload des artifacts de build (optionnel)
+      - name: Upload build artifacts
+        uses: actions/upload-artifact@v3
+        if: success()
+        with:
+          name: build-files-${{ matrix.node-version }}
+          path: dist/
+          retention-days: 7
+
+  # Job séparé pour le type checking TypeScript
+  type-check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20.x'
+          cache: 'npm'
+      - run: npm ci
+      - name: TypeScript type check
+        run: npm run type-check
