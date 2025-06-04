@@ -1,5 +1,5 @@
 
-import '@testing-library/jest-dom';
+import '@testing-library/jest-dom/vitest';
 import { vi } from 'vitest';
 
 // Configuration globale pour les tests
