@@ -125,7 +125,7 @@ const Shop = () => {
                   >
                     <ShopItemCard
                       item={item}
-                      isPurchased={purchasedItems.includes(item.id)}
+                      owned={purchasedItems.includes(item.id)}
                       onPurchase={() => handlePurchase(item)}
                       userCoins={currentUser?.pieces || 0}
                     />
@@ -145,7 +145,7 @@ const Shop = () => {
                   >
                     <ShopItemCard
                       item={item}
-                      isPurchased={purchasedItems.includes(item.id)}
+                      owned={purchasedItems.includes(item.id)}
                       onPurchase={() => handlePurchase(item)}
                       userCoins={currentUser?.pieces || 0}
                     />
@@ -165,7 +165,7 @@ const Shop = () => {
                   >
                     <ShopItemCard
                       item={item}
-                      isPurchased={purchasedItems.includes(item.id)}
+                      owned={purchasedItems.includes(item.id)}
                       onPurchase={() => handlePurchase(item)}
                       userCoins={currentUser?.pieces || 0}
                     />
