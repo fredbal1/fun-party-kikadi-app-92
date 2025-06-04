@@ -1,17 +1,18 @@
 
-# Workflow GitHub Actions pour KIKADI
-# Déclenché sur chaque push/PR vers main
+# 🎮 KIKADI - CI/CD Pipeline
+# Workflow GitHub Actions pour tests, lint et build automatiques
 name: CI/CD Pipeline
 
 on:
   push:
-    branches: [main, master]
+    branches: [main, master, develop]
   pull_request:
-    branches: [main, master]
+    branches: [main, master, develop]
 
 jobs:
   # Job principal : test, lint et build
   test-and-build:
+    name: Test & Build
     runs-on: ubuntu-latest
     
     strategy:
@@ -19,45 +20,67 @@ jobs:
         node-version: [18.x, 20.x]
     
     steps:
-      # Récupération du code
-      - name: Checkout code
+      # 📥 Récupération du code source
+      - name: Checkout repository
         uses: actions/checkout@v4
         
-      # Installation de Node.js
+      # ⚙️ Installation de Node.js avec cache npm
       - name: Setup Node.js ${{ matrix.node-version }}
         uses: actions/setup-node@v4
         with:
           node-version: ${{ matrix.node-version }}
           cache: 'npm'
           
-      # Installation des dépendances
+      # 📦 Installation des dépendances
       - name: Install dependencies
         run: npm ci
         
-      # Vérification du linting avec Prettier
+      # 🎨 Vérification du formatage avec Prettier
       - name: Check code formatting
         run: npm run format:check
+        continue-on-error: false
         
-      # Exécution des tests avec Vitest
-      - name: Run tests
-        run: npm run test:ci
+      # 🔍 Linting du code TypeScript
+      - name: Run ESLint
+        run: npm run lint
         
-      # Build de l'application avec Vite
+      # 🔎 Vérification des types TypeScript
+      - name: TypeScript type check
+        run: npm run type-check
+        
+      # 🧪 Exécution des tests avec couverture
+      - name: Run tests with coverage
+        run: npm run test:coverage
+        
+      # 📊 Upload de la couverture vers Codecov (optionnel)
+      - name: Upload coverage reports
+        uses: codecov/codecov-action@v3
+        if: matrix.node-version == '20.x'
+        with:
+          file: ./coverage/lcov.info
+          flags: unittests
+          name: kikadi-coverage
+          fail_ci_if_error: false
+        
+      # 🏗️ Build de l'application
       - name: Build application
         run: npm run build
         
-      # Upload des artifacts de build (optionnel)
+      # 📤 Upload des artifacts de build
       - name: Upload build artifacts
-        uses: actions/upload-artifact@v3
-        if: success()
+        uses: actions/upload-artifact@v4
+        if: success() && matrix.node-version == '20.x'
         with:
-          name: build-files-${{ matrix.node-version }}
+          name: build-files
           path: dist/
           retention-days: 7
 
-  # Job séparé pour le type checking TypeScript
-  type-check:
+  # Job séparé pour les tests E2E (préparé pour le futur)
+  e2e-tests:
+    name: E2E Tests
     runs-on: ubuntu-latest
+    if: github.event_name == 'pull_request'
+    
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -65,5 +88,23 @@ jobs:
           node-version: '20.x'
           cache: 'npm'
       - run: npm ci
-      - name: TypeScript type check
-        run: npm run type-check
+      - name: Run E2E tests (placeholder)
+        run: echo "E2E tests will be implemented later"
+        # Future: npm run test:e2e
+
+  # Job pour vérifier la sécurité des dépendances
+  security-audit:
+    name: Security Audit
+    runs-on: ubuntu-latest
+    
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20.x'
+          cache: 'npm'
+      - run: npm ci
+      - name: Run security audit
+        run: npm audit --audit-level=moderate
+        continue-on-error: true
+

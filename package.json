@@ -42,6 +42,7 @@
     "@supabase/supabase-js": "^2.49.10",
     "@tanstack/react-query": "^5.56.2",
     "@testing-library/jest-dom": "^6.6.3",
+    "@types/testing-library__jest-dom": "^6.0.0",
     "@vitest/ui": "^3.2.1",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
