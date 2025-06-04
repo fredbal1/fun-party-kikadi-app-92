@@ -12,5 +12,10 @@ declare global {
   }
 }
 
+// Suppression de la référence incorrecte à testing-library__jest-dom
+declare module '@testing-library/jest-dom/matchers' {
+  export * from '@testing-library/jest-dom';
+}
+
 // Export vide pour faire de ce fichier un module
 export {};

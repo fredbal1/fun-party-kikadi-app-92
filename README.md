@@ -1,3 +1,4 @@
+
 # 🎮 KIKADI - Le jeu social qui crée du lien
 
 ![CI](https://github.com/fredbal1/fun-party-kikadi-app-06/actions/workflows/ci.yml/badge.svg)
@@ -22,6 +23,24 @@
 - **Safe** - Questions familiales
 - **Intime** - Questions plus personnelles
 - **No Filter** - Questions sans tabou
+
+---
+
+## 📐 Architecture Technique
+
+L'architecture KIKADI repose sur une **séparation stricte** entre :
+- **UI** (composants React purs)
+- **Logique métier** (hooks spécialisés) 
+- **État global** (stores Zustand avec sélecteurs atomiques)
+- **Accès aux données** (services Supabase préparés)
+
+📖 **Documentation complète** : [`/docs/README_ARCHITECTURE.md`](./docs/README_ARCHITECTURE.md)
+
+### 🧩 Modules principaux :
+- **`/store/game/`** - État global avec middleware Zustand
+- **`/hooks/phases/`** - Logique métier par phase de jeu
+- **`/services/supabase/`** - Services de données (prêts pour intégration)
+- **`/components/game/`** - Interface utilisateur découplée
 
 ---
 
@@ -72,73 +91,94 @@ npm run type-check       # Vérification des types TypeScript
 
 ## 🧪 Tests
 
-Le projet utilise **Vitest** pour les tests unitaires et d'intégration.
+Le projet utilise **Vitest** avec **Testing Library** pour les tests unitaires et d'intégration.
+
+### Structure des tests
+- **`__tests__/hooks/`** - Tests des hooks métier (logique de jeu, phases, actions joueur)
+- **`__tests__/stores/`** - Tests des stores Zustand (état global, mutations)
+- **`__tests__/components/`** - Tests d'intégration UI
+- **`src/test/setup.ts`** - Configuration globale des tests
+- **`vitest.config.ts`** - Configuration Vitest avec support JSX
+
+### Coverage cible
+- **Hooks métier** : 90%+ (logique critique)
+- **Stores** : 95%+ (mutations d'état)
+- **Services** : 80%+ (prêts pour l'intégration Supabase)
+
+### TODO en cours
+- ✅ Tests bots et synchronisation des phases
+- ✅ Tests d'intégration temps réel (Supabase)
+- ✅ Tests de performance (rendu < 16ms par phase)
 
 ### Écrire un test
 
 ```typescript
-// __tests__/example.test.tsx
+// __tests__/hooks/useGameLogic.test.tsx
 import { describe, it, expect } from 'vitest'
-import { render, screen } from '@testing-library/react'
-import { BrowserRouter } from 'react-router-dom'
-import MonComposant from '@/components/MonComposant'
+import { renderHook } from '@testing-library/react'
+import { useGameLogic } from '@/hooks/useGameLogic'
 
-describe('MonComposant', () => {
-  it('devrait afficher le titre', () => {
-    render(
-      <BrowserRouter>
-        <MonComposant />
-      </BrowserRouter>
-    )
+describe('useGameLogic', () => {
+  it('should handle answer submission correctly', () => {
+    const { result } = renderHook(() => useGameLogic())
     
-    expect(screen.getByText('Titre attendu')).toBeInTheDocument()
+    expect(result.current.handleSubmitAnswer).toBeDefined()
+    expect(typeof result.current.canAdvancePhase).toBe('function')
   })
 })
 ```
 
-### Structure des tests
-- `__tests__/` - Tests unitaires et d'intégration
-- `src/test/setup.ts` - Configuration globale des tests
-- `vitest.config.ts` - Configuration Vitest
+---
 
-### Couverture de code
-```bash
-npm run test:coverage
-# Génère un rapport dans ./coverage/index.html
-```
+## 🐛 Known Issues & Résolutions
+
+### ✅ Erreurs corrigées récemment
+
+#### Types d'export incorrects
+- **Problème** : `SyntaxError: GameStoreState not exported`
+- **Cause** : Alias de type incorrect dans `/store/game/index.ts`
+- **Solution** : Utilisation de `export type { GameState }` au lieu d'alias inutiles
+
+#### Configuration Testing Library
+- **Problème** : Erreurs `@testing-library/jest-dom` non reconnues
+- **Solution** : Configuration correcte dans `/src/types/testing.d.ts`
+
+#### Imports circulaires
+- **Prévention** : Structure avec points d'entrée uniques (`index.ts`) dans chaque module
+
+### 🔧 Debugging des types
+Si vous rencontrez des erreurs TypeScript :
+1. Vérifiez `/src/types/` pour les définitions
+2. Contrôlez les exports dans les `index.ts`
+3. Évitez les alias de types sans raison explicite
 
 ---
 
 ## 📦 Stack technique
 
 ### 🔧 Framework & Build
-- **React 18** - Bibliothèque UI
-- **TypeScript** - Typage statique
+- **React 18** - Bibliothèque UI avec hooks spécialisés
+- **TypeScript** - Typage statique strict
 - **Vite** - Build tool et serveur de développement
 - **Tailwind CSS** - Framework CSS utility-first
 
 ### 🎨 UI & Animations
-- **shadcn/ui** - Composants UI réutilisables
+- **shadcn/ui** - Composants UI réutilisables et accessibles
 - **Radix UI** - Primitives accessibles
-- **Framer Motion** - Animations fluides
+- **Framer Motion** - Animations fluides (transitions de phase)
 - **Lucide React** - Icônes modernes
 
 ### 🧠 State Management & Data
-- **Zustand** - Gestion d'état global
-- **Supabase** - Backend as a Service (BaaS)
-- **TanStack Query** - Cache et synchronisation des données
-- **React Hook Form** - Gestion des formulaires
+- **Zustand** - Gestion d'état global avec middleware
+- **Sélecteurs atomiques** - Optimisation des re-rendus
+- **Supabase** - Backend as a Service (intégration préparée)
+- **TanStack Query** - Cache et synchronisation (prêt pour Supabase)
 
 ### 🧪 Testing & Quality
-- **Vitest** - Framework de test
+- **Vitest** - Framework de test rapide
 - **Testing Library** - Utilitaires de test React
 - **ESLint** - Linter JavaScript/TypeScript
 - **Prettier** - Formateur de code
-
-### 📱 Mobile & PWA
-- **PWA** - Application web progressive
-- **React Router** - Navigation côté client
-- **React Hot Toast** - Notifications
 
 ---
 
@@ -146,38 +186,25 @@ npm run test:coverage
 
 ```
 src/
-├── components/          # Composants React réutilisables
-│   ├── ui/             # Composants UI de base (shadcn/ui)
+├── components/          # Composants React (UI pure)
+│   ├── ui/             # Composants de base (shadcn/ui)
 │   ├── game/           # Composants spécifiques au jeu
 │   ├── games/          # Composants par mini-jeu
 │   │   ├── kikadi/     # Mini-jeu KiKaDi
 │   │   ├── kidivrai/   # Mini-jeu KiDiVrai
 │   │   ├── kidenous/   # Mini-jeu KiDeNous
 │   │   └── kideja/     # Mini-jeu KiDéjà
-│   ├── animations/     # Composants d'animation
-│   ├── admin/          # Interface d'administration
-│   └── shop/           # Composants de la boutique
-├── pages/              # Pages principales de l'application
-├── hooks/              # Hooks React personnalisés
-├── context/            # Contextes React (state global)
-├── store/              # Stores Zustand
-├── types/              # Définitions TypeScript
-├── constants/          # Constantes et configuration
-├── utils/              # Fonctions utilitaires
-└── lib/                # Bibliothèques et configurations
+│   └── animations/     # Composants d'animation
+├── hooks/              # Hooks React (logique métier)
+│   ├── phases/         # Hooks spécialisés par phase
+│   └── playerActions/  # Actions joueur modulaires
+├── store/              # Stores Zustand (état global)
+│   ├── game/          # Store principal du jeu
+│   └── selectors/     # Sélecteurs atomiques optimisés
+├── services/           # Services de données (Supabase)
+├── types/              # Définitions TypeScript centralisées
+└── constants/          # Constantes et configuration
 ```
-
-### 🎮 Pages principales
-- `/` - Page d'accueil
-- `/auth` - Authentification
-- `/dashboard` - Menu principal du joueur
-- `/create` - Création d'une partie
-- `/lobby/:gameId` - Salon d'attente
-- `/game/:gameId` - Interface de jeu
-- `/results/:gameId` - Résultats de la partie
-- `/shop` - Boutique d'objets
-- `/admin` - Interface d'administration
-- `/admin/dev-mode` - Mode développeur avec bots
 
 ---
 
@@ -208,27 +235,23 @@ Le pipeline CI/CD se déclenche automatiquement sur :
 - Push vers `main`, `master`, ou `develop`
 - Pull requests vers ces branches
 
-### Hébergement personnalisé
-Le projet peut être déployé sur n'importe quelle plateforme supportant les SPAs :
-- Vercel, Netlify, Firebase Hosting
-- GitHub Pages, AWS S3, etc.
-
 ---
 
 ## 🤝 Contribution
 
+### Standards de code
+- **Architecture** : Respecter la séparation UI/Hooks/Store/Services
+- **Types** : Utiliser les définitions centralisées dans `/types/`
+- **Tests** : Couvrir les hooks et stores critiques
+- **Documentation** : Maintenir les JSDoc à jour
+
 ### Workflow de développement
 1. Fork le projet
 2. Créer une branche feature (`git checkout -b feature/nouvelle-fonctionnalite`)
-3. Commiter les changements (`git commit -m 'Ajouter nouvelle fonctionnalité'`)
-4. Pousser vers la branche (`git push origin feature/nouvelle-fonctionnalite`)
-5. Ouvrir une Pull Request
-
-### Standards de code
-- Utiliser TypeScript pour tout nouveau code
-- Suivre les conventions ESLint et Prettier
-- Écrire des tests pour les nouvelles fonctionnalités
-- Documenter les composants complexes
+3. Respecter l'architecture modulaire existante
+4. Ajouter des tests pour les nouvelles fonctionnalités
+5. Mettre à jour la documentation si nécessaire
+6. Ouvrir une Pull Request
 
 ---
 
@@ -240,8 +263,8 @@ Ce projet est sous licence MIT. Voir le fichier `LICENSE` pour plus de détails.
 
 ## 🔗 Liens utiles
 
+- **Documentation Architecture** : [`/docs/README_ARCHITECTURE.md`](./docs/README_ARCHITECTURE.md)
 - **Projet Lovable** : [https://lovable.dev/projects/14dfe1f3-1f04-430d-92e5-398616247d1b](https://lovable.dev/projects/14dfe1f3-1f04-430d-92e5-398616247d1b)
-- **Documentation Lovable** : [https://docs.lovable.dev/](https://docs.lovable.dev/)
 - **Supabase Docs** : [https://supabase.com/docs](https://supabase.com/docs)
 - **Tailwind CSS** : [https://tailwindcss.com/docs](https://tailwindcss.com/docs)
 - **shadcn/ui** : [https://ui.shadcn.com/](https://ui.shadcn.com/)

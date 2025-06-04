@@ -1,243 +1,247 @@
 
-# 🏗️ Architecture KIKADI - Refactoring Game.tsx
+# 🏗️ Architecture Technique KIKADI
 
 ## 📋 Vue d'ensemble
 
-Le fichier `Game.tsx` a été entièrement refactorisé pour suivre les bonnes pratiques KIKADI :
-- **Séparation claire** entre logique métier et présentation
-- **Architecture modulaire** avec composants spécialisés
-- **Préparation Supabase** avec des hooks centralisés
-- **Performance optimisée** avec lazy loading et animations
+Le projet KIKADI suit une architecture modulaire stricte basée sur la séparation des responsabilités, optimisée pour la scalabilité et la maintenabilité d'un jeu multijoueur temps réel.
 
-## 🧩 Structure des composants
+```
+📦 Architecture KIKADI
+├── src/
+│   ├── store/                      # État global (Zustand)
+│   │   ├── game/
+│   │   │   ├── state.ts           # Définition GameState (interface principale)
+│   │   │   ├── actions.ts         # Mutations d'état GameActions
+│   │   │   ├── middleware.ts      # Persist + DevTools
+│   │   │   └── index.ts          # Point d'entrée unifié
+│   │   ├── authStore.ts          # Authentification utilisateur
+│   │   └── uiStore.ts            # État interface utilisateur
+│   │
+│   ├── hooks/                     # Logique métier réutilisable
+│   │   ├── phases/               # Hooks spécialisés par phase
+│   │   │   ├── useIntroPhaseLogic.ts
+│   │   │   ├── useQuestionPhaseLogic.ts
+│   │   │   ├── useVotingPhaseLogic.ts
+│   │   │   ├── useRevealPhaseLogic.ts
+│   │   │   └── useResultPhaseLogic.ts
+│   │   ├── playerActions/        # Actions joueur modulaires
+│   │   │   ├── useSubmitAnswer.ts
+│   │   │   ├── useCastVote.ts
+│   │   │   ├── usePlayerPing.ts
+│   │   │   └── usePlayerReport.ts
+│   │   ├── useGameLogic.ts       # Hook orchestrateur principal
+│   │   ├── useGamePhases.ts      # Transitions entre phases
+│   │   └── useXPProgression.ts   # Système d'expérience
+│   │
+│   ├── services/                 # Accès données (Supabase uniquement)
+│   │   ├── supabase/
+│   │   │   ├── gameService.ts
+│   │   │   ├── playerService.ts
+│   │   │   ├── questionService.ts
+│   │   │   ├── roundService.ts
+│   │   │   └── voteService.ts
+│   │   └── gameService.ts        # Service principal préparé
+│   │
+│   ├── components/               # Interface utilisateur pure
+│   │   ├── ui/                  # Composants de base (shadcn/ui)
+│   │   ├── game/                # Composants spécifiques au jeu
+│   │   │   ├── phases/         # Composants par phase
+│   │   │   └── GamePhaseRenderer.tsx
+│   │   ├── games/              # Mini-jeux spécialisés
+│   │   │   ├── kikadi/
+│   │   │   ├── kidivrai/
+│   │   │   ├── kidenous/
+│   │   │   └── kideja/
+│   │   └── animations/         # Effets visuels
+│   │
+│   ├── types/                   # Définitions TypeScript centralisées
+│   │   ├── models.ts           # Entités métier (User, Game, Player...)
+│   │   ├── enums.ts            # Énumérations (GamePhase, MiniGame...)
+│   │   ├── inputs.ts           # Types de formulaires
+│   │   └── testing.d.ts        # Types pour les tests
+│   │
+│   └── constants/              # Configuration et constantes
+       ├── gamePhases.ts       # Phases par mini-jeu
+       └── performance.ts      # Seuils de performance
+```
 
-### `/src/pages/Game.tsx` (Composant principal)
-**Responsabilités :**
-- UI pure, aucune logique métier
-- Layout global (header, timer, progression XP)
-- Délégation vers `useGameLogic()` pour toute la logique
-- Gestion des états de chargement
+## 🧠 Principes Structurants
 
-**Props/State :**
-- Aucun `useState` local (tout vient du store)
-- Uniquement des handlers fournis par le hook
+### 1. **Séparation stricte des responsabilités**
+- **Composants UI** : Affichage uniquement, aucune logique métier
+- **Hooks** : Logique métier et orchestration
+- **Stores** : État global centralisé
+- **Services** : Communication avec Supabase
 
-### `/src/hooks/useGameLogic.ts` (Hook principal)
-**Responsabilités :**
-- Centralisation de toute la logique métier
-- Gestion des phases et transitions
-- Actions joueur (réponses, votes, réactions)
-- Interface avec les stores (Zustand)
-- Préparation pour l'intégration Supabase
+### 2. **Zéro mock, préparation production**
+- Tous les hooks sont prêts pour l'intégration Supabase
+- Aucune donnée factice dans le code de production
+- Services documentés avec implémentation TODO clairement marquée
 
-**Exports principaux :**
+### 3. **Types centralisés et cohérents**
+- **Règle critique** : Jamais d'alias de type sans raison explicite
+- Interface `GameState` dans `state.ts` → Ne PAS renommer en `GameStoreState`
+- Tous les types métier dans `/types/models.ts`
+
+### 4. **Architecture testable**
+- Chaque hook est testable indépendamment
+- Services isolés pour mocking facile
+- Composants découplés de la logique
+
+## 🔄 Flux de Données
+
+```
+┌─────────────────┐    ┌──────────────────┐    ┌─────────────────┐
+│   Composants    │───▶│      Hooks       │───▶│     Stores      │
+│   (UI pure)     │    │  (Logique métier)│    │ (État global)   │
+└─────────────────┘    └──────────────────┘    └─────────────────┘
+                                │                        │
+                                ▼                        │
+                       ┌──────────────────┐              │
+                       │    Services      │◀─────────────┘
+                       │   (Supabase)     │
+                       └──────────────────┘
+```
+
+### Exemple concret :
+1. **User action** → `Game.tsx` appelle `useGameLogic().handleSubmitAnswer()`
+2. **Hook logic** → `useGameLogic` valide et appelle `gameService.savePlayerAnswer()`
+3. **Service call** → `gameService` communique avec Supabase
+4. **State update** → Service met à jour le `gameStore` via actions
+5. **UI update** → Composants se re-rendent automatiquement
+
+## 🎮 Gestion des Phases de Jeu
+
+### Architecture modulaire par phase
+Chaque phase possède son propre hook spécialisé dans `/hooks/phases/` :
+
+- **`useIntroPhaseLogic`** - Présentation des règles
+- **`useQuestionPhaseLogic`** - Saisie des réponses
+- **`useVotingPhaseLogic`** - Système de vote
+- **`useRevealPhaseLogic`** - Révélation des résultats
+- **`useResultPhaseLogic`** - Calcul et affichage des scores
+
+### Hook orchestrateur
+**`useGameLogic`** centralise et route les actions vers le bon hook de phase :
 ```typescript
-{
-  // État
-  gameId, currentGame, currentPhase, players, ...
-  
-  // Actions  
-  handleSubmitAnswer, handleSubmitVote, handleReaction,
-  
-  // Utilitaires
-  canAdvancePhase, ConfettiComponent, ShakeWrapper
+const handleSubmitAnswer = (answer: string) => {
+  switch (currentPhase) {
+    case 'answering':
+      return questionLogic.submitAnswer(answer);
+    default:
+      console.warn('Wrong phase for answer submission');
+  }
+};
+```
+
+## 📊 Store Management (Zustand)
+
+### Structure du GameStore
+```typescript
+// État (state.ts)
+interface GameState {
+  currentUser: User | null;
+  currentGame: Game | null;
+  players: Player[];
+  currentPhase: GamePhase;
+  currentRound: number;
+  timeRemaining: number;
+  isHost: boolean;
+  isConnected: boolean;
+  inventory: string[];
+}
+
+// Actions (actions.ts)
+interface GameActions {
+  setCurrentUser: (user: User | null) => void;
+  setCurrentGame: (game: Game | null) => void;
+  updatePlayer: (id: string, updates: Partial<Player>) => void;
+  // ... autres mutations
 }
 ```
 
-## 📚 Hooks métier
-
-### Hook principal
-- **`useGameLogic()`** - Hook maître gérant toute la logique de partie
-  - Centralise les interactions utilisateur
-  - Gère les transitions de phase
-  - Interface avec tous les autres hooks spécialisés
-
-### Hooks spécialisés
-- **`useGamePhases()`** - Gestion des transitions de phase  
-  - Validation des passages de phase
-  - Logique spécifique par mini-jeu
-  - Vérification des conditions (tous les joueurs ont répondu, etc.)
-
-- **`useGameStore()`** - État global Zustand
-  - Données de partie, joueurs, phase courante
-  - Actions de mutation d'état
-  - Synchronisation temps réel (prévu)
-
-- **`useXPProgression()`** - Système d'expérience
-  - Attribution de points selon les actions
-  - Calcul de niveau et progression
-  - Récompenses de fin de partie
-
-- **`useVisualEffects()`** - Animations et effets
-  - Confettis, shake, transitions
-  - Effets achetés en boutique (prévu)
-  - Feedback visuel des actions
-
-### Hooks utilitaires
-- **`useParams()`** - Récupération du gameId depuis l'URL
-- **`useNavigate()`** - Navigation React Router
-- **`useDevMode()`** - Mode développeur avec bots (prévu)
-
-## 🎯 Phases de jeu
-
-### Cycle complet d'une manche :
-
-| Phase | Description | Durée | Actions joueur |
-|-------|-------------|-------|----------------|
-| **intro** | Présentation du mini-jeu et règles | 10s | Lecture des règles |
-| **answering** | Saisie de la réponse à la question | 60s | Taper sa réponse |
-| **voting** | Vote/choix selon le mini-jeu | 30s | Voter pour une option |
-| **revealing** | Révélation des résultats | 15s | Envoyer des réactions emoji |
-| **result** | Affichage des scores de manche | 10s | Voir le classement |
-
-### Transitions automatiques :
-- **intro** → **answering** : Automatique après 10s ou clic host
-- **answering** → **voting** : Quand tous les joueurs ont répondu
-- **voting** → **revealing** : Quand tous les joueurs ont voté
-- **revealing** → **result** : Automatique après révélation
-- **result** → **intro** (manche suivante) ou **Results** (fin de partie)
-
-## 🎮 Composants de phases
-
-### `/src/components/game/phases/`
-
-Chaque phase est un composant isolé et réutilisable :
-
-1. **`IntroPhase.tsx`** - Introduction du mini-jeu
-2. **`QuestionPhase.tsx`** - Saisie de réponse
-3. **`ActionPhase.tsx`** - Vote/Action selon le mini-jeu  
-4. **`RevealPhase.tsx`** - Révélation des résultats
-5. **`ScorePhase.tsx`** - Affichage des scores
-
-**Props communes :**
+### Sélecteurs atomiques optimisés
+Dans `/store/selectors/gameSelectors.ts` :
 ```typescript
-interface PhaseProps {
-  miniJeu: MiniGameType;
-  roundNumber: number;
-  totalRounds: number;
-  players: PlayerState[];
-  // + props spécifiques selon la phase
+// Évite les re-rendus inutiles en souscrivant uniquement aux données nécessaires
+export const usePlayers = () => useGameStore(state => state.players);
+export const useCurrentPhase = () => useGameStore(state => state.currentPhase);
+export const useCurrentGame = () => useGameStore(state => state.currentGame);
+```
+
+## 🔌 Intégration Supabase (Préparée)
+
+### Services documentés et prêts
+Tous les services dans `/services/supabase/` sont **documentés** mais **non implémentés** :
+
+```typescript
+// gameService.ts - Exemple
+/**
+ * Met à jour une partie dans Supabase
+ * TODO: Implémenter avec supabase.from('games').update()
+ */
+static async updateGameInDb(gameId: UUID, updates: Partial<Game>): Promise<boolean> {
+  console.log('💾 [GameService] Mise à jour partie:', gameId, updates);
+  // TODO: Intégrer avec Supabase
+  return false;
 }
 ```
 
-### `/src/components/game/GamePhaseRenderer.tsx`
-**Responsabilités :**
-- Routage dynamique vers le bon composant de phase
-- Gestion des transitions animées (`AnimatePresence`)
-- Lazy loading avec fallback
-- Props forwarding vers les composants enfants
+### Points d'intégration critiques
+Dans les hooks, des commentaires `TODO` marquent précisément où Supabase doit être intégré :
+- **useGameLogic.ts ligne 65** : `TODO: Utiliser playerService.submitAnswer()`
+- **useGameLogic.ts ligne 85** : `TODO: Utiliser playerService.submitVote()`
+- **useGameLogic.ts ligne 125** : `TODO: Synchroniser avec gameService.updateGamePhase()`
 
-## 🔄 Flux de données
+## 🧪 Architecture de Tests
 
+### Structure recommandée
 ```
-Game.tsx (UI) 
-    ↓ useGameLogic()
-GameStore (Zustand) ← → Supabase (TODO)
-    ↓ GamePhaseRenderer
-Phase Components
-```
-
-### Exemple de flux :
-1. **User action** → Handler dans `useGameLogic`
-2. **Hook logic** → Update du `gameStore` 
-3. **Store change** → Re-render automatique du composant
-4. **Phase change** → `GamePhaseRenderer` affiche le nouveau composant
-
-## 🔌 Préparation Supabase
-
-### Services prévus à implémenter :
-
-#### `/src/services/supabase/gameService.ts`
-```typescript
-// TODO: Implémenter les méthodes suivantes
-export const gameService = {
-  loadGame: (gameId: string) => Promise<Game>,
-  updateGamePhase: (gameId: string, phase: GamePhase) => Promise<void>,
-  resetGame: (gameId: string) => Promise<void>
-};
+__tests__/
+├── hooks/                    # Tests des hooks métier
+│   ├── useGameLogic.test.tsx
+│   ├── useGamePhases.test.tsx
+│   └── playerActions/
+├── stores/                   # Tests des stores
+│   └── gameStore.test.tsx
+├── services/                 # Tests des services (avec mocks)
+│   └── gameService.test.tsx
+└── components/              # Tests d'intégration UI
+    └── Game.test.tsx
 ```
 
-#### `/src/services/supabase/playerService.ts`  
-```typescript
-// TODO: Implémenter les méthodes suivantes
-export const playerService = {
-  submitAnswer: (gameId: string, playerId: string, answer: string) => Promise<void>,
-  submitVote: (gameId: string, playerId: string, targetId: string) => Promise<void>,
-  sendReaction: (gameId: string, playerId: string, emoji: string) => Promise<void>
-};
-```
+### Configuration Vitest
+- **Framework** : Vitest + Testing Library
+- **Types** : Configuration dans `/src/types/testing.d.ts`
+- **Setup** : Matchers étendus dans `/src/test/setup.ts`
 
-#### `/src/services/supabase/realtimeService.ts`
-```typescript
-// TODO: Implémenter les méthodes suivantes  
-export const realtimeService = {
-  subscribeToGame: (gameId: string, callback: Function) => RealtimeChannel,
-  unsubscribeFromGame: (channel: RealtimeChannel) => void
-};
-```
+## ⚠️ Erreurs Connues Corrigées
 
-### Points d'intégration critiques :
+### 1. Alias de types incorrects
+**Problème** : Export `GameState as GameStoreState` dans `index.ts`
+**Solution** : Utiliser `export type { GameState }` directement
+**Règle** : Ne jamais aliasser un type sans raison explicite
 
-#### Dans `useGameLogic.ts` :
-- **Ligne 47** : `TODO: Charger la partie depuis Supabase`
-- **Ligne 65** : `TODO: Utiliser playerService.submitAnswer(answer)`
-- **Ligne 85** : `TODO: Utiliser playerService.submitVote(targetId)`  
-- **Ligne 105** : `TODO: Utiliser playerService.sendReaction(emoji)`
-- **Ligne 125** : `TODO: Synchroniser avec gameService.updateGamePhase()`
+### 2. Types Testing Library
+**Problème** : Référence incorrecte à `testing-library__jest-dom`
+**Solution** : Configuration correcte dans `testing.d.ts`
 
-#### Tables Supabase concernées :
-- `games` - État de la partie
-- `players` - Joueurs connectés  
-- `rounds` - Données de manche
-- `answers` - Réponses des joueurs
-- `votes` - Votes des joueurs
+### 3. Imports circulaires
+**Prévention** : Structure claire avec points d'entrée uniques (`index.ts`)
 
-## 🧪 Tests et Debug
+## 🚀 Roadmap Technique
 
-### Data attributes pour les tests :
-- `data-testid="intro-phase"`
-- `data-testid="question-phase"`  
-- `data-testid="action-phase"`
-- `data-testid="reveal-phase"`
-- `data-testid="score-phase"`
-- `data-testid="game-header"`
-- `data-testid="back-button"`
+### Prochaines étapes prioritaires
+1. **Intégration Supabase complète** - Remplacer tous les `TODO` par du code fonctionnel
+2. **Tests complets** - Couvrir tous les hooks et services
+3. **Optimisation** - React.memo sur les composants critiques
+4. **PWA** - Service Worker et cache avancé
 
-### Debug panel (développement) :
-Affiché en bas à gauche en mode dev :
-- Phase courante
-- Nombre de joueurs
-- État `canAdvancePhase`
-
-## ⚡ Performance
-
-### Optimisations implémentées :
-- **Composants de phases** : Pas de lazy loading nécessaire car légers (< 200 lignes chacun)
-- **AnimatePresence** pour les transitions fluides  
-- **Memoization** des handlers avec `useCallback`
-- **État minimal** dans le composant UI
-- **Suspense** avec fallback personnalisé
-
-### Décision sur le lazy loading :
-Les composants de phases (`IntroPhase`, `QuestionPhase`, etc.) ne nécessitent **PAS** de lazy loading car :
-- Chaque composant fait moins de 200 lignes
-- Pas d'imports lourds (pas de lib externe complexe)
-- Déjà optimisés avec `AnimatePresence` 
-- Le gain de performance serait négligeable vs la complexité ajoutée
-
-### Métriques cibles :
-- **Temps de rendu** < 16ms par phase
-- **Bundle size** optimisé par phase
-- **Animations** 60fps constants
-
-## 🚀 Prochaines étapes
-
-1. **Intégration Supabase complète**
-2. **Tests unitaires** de tous les hooks
-3. **Tests d'intégration** des flux complets  
-4. **Optimisation** des re-renders avec React.memo
-5. **PWA features** (notifications, offline)
+### Architecture future
+- **Micro-frontend** : Chaque mini-jeu pourrait devenir un module indépendant
+- **Real-time optimisé** : WebSockets personnalisés pour la latence critique
+- **Monitoring** : Métriques de performance et erreurs en production
 
 ---
 
-Cette architecture modulaire garantit la **maintenabilité**, la **scalabilité** et la **testabilité** du code KIKADI tout en préparant l'intégration backend complète.
+Cette architecture garantit la **maintenabilité**, la **scalabilité** et la **testabilité** du projet KIKADI tout en préparant l'intégration backend complète.
