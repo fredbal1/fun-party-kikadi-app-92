@@ -1,118 +1,98 @@
 
 import { useState } from 'react';
 import { motion } from 'framer-motion';
-import { useNavigate } from 'react-router-dom';
 import { AnimatedBackground } from '@/components/animations/AnimatedBackground';
+import { ShopItemCard } from '@/components/shop/ShopItemCard';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { ArrowLeft, Coins, ShoppingBag, Sparkles, Crown, Palette } from 'lucide-react';
-import { ShopItem } from '@/types';
+import { ArrowLeft, Coins, ShoppingBag, Star } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
+import { useGameStore } from '@/store/gameStore';
 import { toast } from 'react-hot-toast';
 
-// Mock shop data - will be connected to Supabase
-const shopItems: ShopItem[] = [
-  {
-    id: '1',
-    type: 'avatar',
-    nom: 'Avatar Robot',
-    description: 'Un avatar futuriste pour se démarquer',
-    prix: 150,
-    rarete: 'common',
-    icon: '🤖'
-  },
-  {
-    id: '2',
-    type: 'titre',
-    nom: 'Maître du Bluff',
-    description: 'Titre légendaire pour les experts',
-    prix: 500,
-    rarete: 'legendary',
-    icon: '🃏'
-  },
-  {
-    id: '3',
-    type: 'effet',
-    nom: 'Confettis Arc-en-ciel',
-    description: 'Effet visuel lors des victoires',
-    prix: 200,
-    rarete: 'rare',
-    icon: '🌈'
-  },
-  {
-    id: '4',
-    type: 'avatar',
-    nom: 'Avatar Ninja',
-    description: 'Avatar mystérieux et stylé',
-    prix: 100,
-    rarete: 'common',
-    icon: '🥷'
-  },
-  {
-    id: '5',
-    type: 'effet',
-    nom: 'Explosion Dorée',
-    description: 'Effet spectaculaire premium',
-    prix: 800,
-    rarete: 'legendary',
-    icon: '💥'
-  }
-];
+interface ShopItem {
+  id: string;
+  type: 'avatar' | 'titre' | 'effet';
+  nom: string;
+  description: string;
+  prix: number;
+  rareté: 'common' | 'rare' | 'legendary';
+  emoji?: string;
+  preview?: string;
+}
 
 const Shop = () => {
   const navigate = useNavigate();
-  const [userCoins] = useState(350); // Mock user coins
-  const [selectedCategory, setSelectedCategory] = useState<'all' | 'avatar' | 'titre' | 'effet'>('all');
-  const [ownedItems] = useState<string[]>(['1']); // Mock owned items
+  const { currentUser, updateUserCoins } = useGameStore();
+  const [purchasedItems, setPurchasedItems] = useState<string[]>([]);
 
-  const filteredItems = shopItems.filter(item => 
-    selectedCategory === 'all' || item.type === selectedCategory
-  );
-
-  const getRarityColor = (rarity: string) => {
-    switch (rarity) {
-      case 'common':
-        return 'bg-gray-500';
-      case 'rare':
-        return 'bg-blue-500';
-      case 'legendary':
-        return 'bg-purple-500';
-      default:
-        return 'bg-gray-500';
-    }
-  };
-
-  const getCategoryIcon = (category: string) => {
-    switch (category) {
-      case 'avatar':
-        return <Palette className="h-4 w-4" />;
-      case 'titre':
-        return <Crown className="h-4 w-4" />;
-      case 'effet':
-        return <Sparkles className="h-4 w-4" />;
-      default:
-        return <ShoppingBag className="h-4 w-4" />;
-    }
-  };
+  // Mock shop items
+  const shopItems: ShopItem[] = [
+    // Avatars
+    { id: 'avatar1', type: 'avatar', nom: 'Gamer Pro', description: 'Pour les vrais gamers', prix: 50, rareté: 'common', emoji: '🎮' },
+    { id: 'avatar2', type: 'avatar', nom: 'Licorne Magique', description: 'Brillez de mille feux', prix: 120, rareté: 'rare', emoji: '🦄' },
+    { id: 'avatar3', type: 'avatar', nom: 'Dragon Légendaire', description: 'Avatar ultra rare', prix: 300, rareté: 'legendary', emoji: '🐉' },
+    
+    // Titres
+    { id: 'titre1', type: 'titre', nom: 'Roi du Bluff', description: 'Titre pour les menteurs pros', prix: 80, rareté: 'common' },
+    { id: 'titre2', type: 'titre', nom: 'Détective Privé', description: 'Rien ne vous échappe', prix: 150, rareté: 'rare' },
+    { id: 'titre3', type: 'titre', nom: 'Maître du Jeu', description: 'Titre légendaire réservé aux experts', prix: 500, rareté: 'legendary' },
+    
+    // Effets visuels
+    { id: 'effet1', type: 'effet', nom: 'Confettis Arc-en-ciel', description: 'Explosion colorée à chaque victoire', prix: 100, rareté: 'common' },
+    { id: 'effet2', type: 'effet', nom: 'Flammes Épiques', description: 'Des flammes impressionnantes', prix: 200, rareté: 'rare' },
+    { id: 'effet3', type: 'effet', nom: 'Portail Dimensionnel', description: 'Effet légendaire saisissant', prix: 400, rareté: 'legendary' }
+  ];
 
   const handlePurchase = (item: ShopItem) => {
-    if (ownedItems.includes(item.id)) {
-      toast.error('Vous possédez déjà cet objet !');
+    if (!currentUser) {
+      toast.error('Vous devez être connecté pour acheter');
       return;
     }
-    
-    if (userCoins < item.prix) {
+
+    if (currentUser.pieces < item.prix) {
       toast.error('Pièces insuffisantes !');
       return;
     }
+
+    if (purchasedItems.includes(item.id)) {
+      toast.error('Objet déjà acheté !');
+      return;
+    }
+
+    // Simuler l'achat
+    updateUserCoins(currentUser.pieces - item.prix);
+    setPurchasedItems(prev => [...prev, item.id]);
     
-    toast.success(`${item.nom} acheté !`);
-    // Here we would update user coins and owned items via Supabase
+    toast.success(`${item.nom} acheté avec succès ! 🎉`, {
+      className: 'bg-green-500 text-white'
+    });
+  };
+
+  const getRarityColor = (rarity: string) => {
+    switch (rarity) {
+      case 'common': return 'from-gray-400 to-gray-600';
+      case 'rare': return 'from-blue-400 to-purple-600';
+      case 'legendary': return 'from-yellow-400 to-orange-600';
+      default: return 'from-gray-400 to-gray-600';
+    }
+  };
+
+  const getRarityBadge = (rarity: string) => {
+    switch (rarity) {
+      case 'common': return <Badge className="bg-gray-500">Commun</Badge>;
+      case 'rare': return <Badge className="bg-blue-500">Rare</Badge>;
+      case 'legendary': return <Badge className="bg-yellow-500 text-black">Légendaire</Badge>;
+    }
+  };
+
+  const getFilteredItems = (type: ShopItem['type']) => {
+    return shopItems.filter(item => item.type === type);
   };
 
   return (
-    <AnimatedBackground variant="blue">
+    <AnimatedBackground variant="purple">
       <div className="min-h-screen px-6 py-8">
         {/* Header */}
         <motion.div
@@ -124,144 +104,119 @@ const Shop = () => {
           <Button
             onClick={() => navigate('/dashboard')}
             variant="ghost"
+            size="sm"
             className="text-white hover:bg-white/10"
           >
-            <ArrowLeft className="mr-2 h-5 w-5" />
-            Retour
+            <ArrowLeft size={20} />
           </Button>
           
-          <div className="flex items-center space-x-2 bg-white/10 backdrop-blur-sm rounded-full px-4 py-2">
-            <Coins className="h-5 w-5 text-yellow-400" />
-            <span className="text-white font-bold">{userCoins}</span>
+          <h1 className="text-2xl font-bold text-white flex items-center">
+            <ShoppingBag className="mr-2" size={24} />
+            Boutique
+          </h1>
+          
+          <div className="flex items-center text-white bg-white/10 px-3 py-2 rounded-lg">
+            <Coins size={16} className="mr-1" />
+            <span className="font-bold">{currentUser?.pieces || 0}</span>
           </div>
         </motion.div>
 
-        {/* Title */}
+        {/* Tabs */}
         <motion.div
-          className="text-center mb-8"
+          className="max-w-4xl mx-auto"
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.6, delay: 0.2 }}
         >
-          <div className="text-5xl mb-4">🛍️</div>
-          <h1 className="text-4xl font-black text-white mb-2">
-            Boutique KIKADI
-          </h1>
-          <p className="text-white/80">
-            Personnalisez votre expérience de jeu
-          </p>
-        </motion.div>
-
-        {/* Category tabs */}
-        <motion.div
-          className="max-w-2xl mx-auto mb-8"
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.6, delay: 0.4 }}
-        >
-          <Tabs value={selectedCategory} onValueChange={(value) => setSelectedCategory(value as any)}>
-            <TabsList className="grid w-full grid-cols-4 bg-white/10 backdrop-blur-sm">
-              <TabsTrigger value="all" className="data-[state=active]:bg-white/20">
-                <ShoppingBag className="h-4 w-4 mr-2" />
-                Tout
-              </TabsTrigger>
-              <TabsTrigger value="avatar" className="data-[state=active]:bg-white/20">
-                <Palette className="h-4 w-4 mr-2" />
+          <Tabs defaultValue="avatar" className="w-full">
+            <TabsList className="grid w-full grid-cols-3 bg-white/10 mb-6">
+              <TabsTrigger value="avatar" className="text-white data-[state=active]:bg-white data-[state=active]:text-purple-600">
                 Avatars
               </TabsTrigger>
-              <TabsTrigger value="titre" className="data-[state=active]:bg-white/20">
-                <Crown className="h-4 w-4 mr-2" />
+              <TabsTrigger value="titre" className="text-white data-[state=active]:bg-white data-[state=active]:text-purple-600">
                 Titres
               </TabsTrigger>
-              <TabsTrigger value="effet" className="data-[state=active]:bg-white/20">
-                <Sparkles className="h-4 w-4 mr-2" />
+              <TabsTrigger value="effet" className="text-white data-[state=active]:bg-white data-[state=active]:text-purple-600">
                 Effets
               </TabsTrigger>
             </TabsList>
+
+            <TabsContent value="avatar" className="space-y-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                {getFilteredItems('avatar').map((item, index) => (
+                  <motion.div
+                    key={item.id}
+                    initial={{ opacity: 0, scale: 0.8 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    transition={{ duration: 0.4, delay: index * 0.1 }}
+                  >
+                    <ShopItemCard
+                      item={item}
+                      isPurchased={purchasedItems.includes(item.id)}
+                      onPurchase={() => handlePurchase(item)}
+                      userCoins={currentUser?.pieces || 0}
+                    />
+                  </motion.div>
+                ))}
+              </div>
+            </TabsContent>
+
+            <TabsContent value="titre" className="space-y-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                {getFilteredItems('titre').map((item, index) => (
+                  <motion.div
+                    key={item.id}
+                    initial={{ opacity: 0, scale: 0.8 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    transition={{ duration: 0.4, delay: index * 0.1 }}
+                  >
+                    <ShopItemCard
+                      item={item}
+                      isPurchased={purchasedItems.includes(item.id)}
+                      onPurchase={() => handlePurchase(item)}
+                      userCoins={currentUser?.pieces || 0}
+                    />
+                  </motion.div>
+                ))}
+              </div>
+            </TabsContent>
+
+            <TabsContent value="effet" className="space-y-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                {getFilteredItems('effet').map((item, index) => (
+                  <motion.div
+                    key={item.id}
+                    initial={{ opacity: 0, scale: 0.8 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    transition={{ duration: 0.4, delay: index * 0.1 }}
+                  >
+                    <ShopItemCard
+                      item={item}
+                      isPurchased={purchasedItems.includes(item.id)}
+                      onPurchase={() => handlePurchase(item)}
+                      userCoins={currentUser?.pieces || 0}
+                    />
+                  </motion.div>
+                ))}
+              </div>
+            </TabsContent>
           </Tabs>
         </motion.div>
 
-        {/* Shop items grid */}
+        {/* Rotation notice */}
         <motion.div
-          className="grid grid-cols-1 md:grid-cols-2 gap-4 max-w-4xl mx-auto"
+          className="max-w-md mx-auto mt-8"
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.6, delay: 0.6 }}
+          transition={{ duration: 0.6, delay: 0.8 }}
         >
-          {filteredItems.map((item, index) => (
-            <motion.div
-              key={item.id}
-              initial={{ opacity: 0, scale: 0.8 }}
-              animate={{ opacity: 1, scale: 1 }}
-              transition={{ duration: 0.4, delay: 0.8 + index * 0.1 }}
-            >
-              <Card className="bg-white/10 backdrop-blur-sm border-white/20 hover:bg-white/15 transition-all">
-                <CardHeader className="pb-3">
-                  <div className="flex items-start justify-between">
-                    <div className="flex items-center space-x-3">
-                      <div className="text-3xl">{item.icon}</div>
-                      <div>
-                        <CardTitle className="text-white text-lg">{item.nom}</CardTitle>
-                        <Badge className={`${getRarityColor(item.rarete)} text-white text-xs`}>
-                          {item.rarete}
-                        </Badge>
-                      </div>
-                    </div>
-                    {getCategoryIcon(item.type)}
-                  </div>
-                </CardHeader>
-                
-                <CardContent>
-                  <p className="text-white/80 text-sm mb-4">
-                    {item.description}
-                  </p>
-                  
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center space-x-2">
-                      <Coins className="h-4 w-4 text-yellow-400" />
-                      <span className="text-white font-bold">{item.prix}</span>
-                    </div>
-                    
-                    <Button
-                      onClick={() => handlePurchase(item)}
-                      disabled={ownedItems.includes(item.id)}
-                      className={
-                        ownedItems.includes(item.id)
-                          ? "bg-green-500 text-white cursor-not-allowed"
-                          : userCoins >= item.prix
-                          ? "bg-white text-blue-600 hover:bg-white/90"
-                          : "bg-gray-500 text-white cursor-not-allowed"
-                      }
-                      size="sm"
-                    >
-                      {ownedItems.includes(item.id) 
-                        ? 'Possédé' 
-                        : userCoins >= item.prix 
-                        ? 'Acheter' 
-                        : 'Insuffisant'
-                      }
-                    </Button>
-                  </div>
-                </CardContent>
-              </Card>
-            </motion.div>
-          ))}
-        </motion.div>
-
-        {/* Empty state */}
-        {filteredItems.length === 0 && (
-          <motion.div
-            className="text-center mt-16"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ duration: 0.6, delay: 0.8 }}
-          >
-            <div className="text-6xl mb-4">🛒</div>
-            <p className="text-white/60">
-              Aucun objet dans cette catégorie pour le moment
+          <div className="bg-white/5 backdrop-blur-sm border border-white/10 rounded-lg p-4 text-center">
+            <Star className="h-6 w-6 text-yellow-400 mx-auto mb-2" />
+            <p className="text-white/80 text-sm">
+              Les objets de la boutique changent régulièrement !
             </p>
-          </motion.div>
-        )}
+          </div>
+        </motion.div>
       </div>
     </AnimatedBackground>
   );

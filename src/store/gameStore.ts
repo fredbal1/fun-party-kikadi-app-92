@@ -1,74 +1,85 @@
 
 import { create } from 'zustand';
-import { Game, Player, Round, GamePhase, User } from '@/types';
+import { User, Game, Player } from '@/types';
 
-interface GameState {
-  // Current game data
-  currentGame: Game | null;
-  currentRound: Round | null;
-  currentPhase: GamePhase;
-  players: Player[];
+interface GameStore {
+  // User state
   currentUser: User | null;
-  
-  // Game flow
-  roundNumber: number;
-  timeRemaining: number;
-  isHost: boolean;
-  
-  // Actions
-  setCurrentGame: (game: Game | null) => void;
-  setCurrentRound: (round: Round | null) => void;
-  setCurrentPhase: (phase: GamePhase) => void;
-  setPlayers: (players: Player[]) => void;
   setCurrentUser: (user: User | null) => void;
-  setRoundNumber: (round: number) => void;
-  setTimeRemaining: (time: number) => void;
-  setIsHost: (isHost: boolean) => void;
+  updateUserCoins: (newAmount: number) => void;
+  updateUserXP: (newXP: number) => void;
   
-  // Game actions
-  nextPhase: () => void;
-  resetGame: () => void;
+  // Game state
+  currentGame: Game | null;
+  setCurrentGame: (game: Game | null) => void;
+  
+  // Players state
+  players: Player[];
+  setPlayers: (players: Player[]) => void;
+  addPlayer: (player: Player) => void;
+  removePlayer: (playerId: string) => void;
+  updatePlayer: (playerId: string, updates: Partial<Player>) => void;
+  
+  // Game flow state
+  currentPhase: string;
+  setCurrentPhase: (phase: string) => void;
+  currentRound: number;
+  setCurrentRound: (round: number) => void;
+  
+  // Real-time state
+  isConnected: boolean;
+  setIsConnected: (connected: boolean) => void;
+  
+  // Utility actions
+  resetGameState: () => void;
 }
 
-export const useGameStore = create<GameState>((set, get) => ({
-  // Initial state
-  currentGame: null,
-  currentRound: null,
-  currentPhase: 'intro',
-  players: [],
+export const useGameStore = create<GameStore>((set, get) => ({
+  // User state
   currentUser: null,
-  roundNumber: 1,
-  timeRemaining: 0,
-  isHost: false,
-  
-  // Setters
-  setCurrentGame: (game) => set({ currentGame: game }),
-  setCurrentRound: (round) => set({ currentRound: round }),
-  setCurrentPhase: (phase) => set({ currentPhase: phase }),
-  setPlayers: (players) => set({ players }),
   setCurrentUser: (user) => set({ currentUser: user }),
-  setRoundNumber: (round) => set({ roundNumber: round }),
-  setTimeRemaining: (time) => set({ timeRemaining: time }),
-  setIsHost: (isHost) => set({ isHost }),
+  updateUserCoins: (newAmount) => set((state) => ({
+    currentUser: state.currentUser ? { ...state.currentUser, pieces: newAmount } : null
+  })),
+  updateUserXP: (newXP) => set((state) => ({
+    currentUser: state.currentUser ? { ...state.currentUser, xp: newXP } : null
+  })),
   
-  // Game flow actions
-  nextPhase: () => {
-    const { currentPhase } = get();
-    const phases: GamePhase[] = ['intro', 'answering', 'voting', 'revealing', 'results', 'transition'];
-    const currentIndex = phases.indexOf(currentPhase);
-    
-    if (currentIndex < phases.length - 1) {
-      set({ currentPhase: phases[currentIndex + 1] });
-    }
-  },
+  // Game state
+  currentGame: null,
+  setCurrentGame: (game) => set({ currentGame: game }),
   
-  resetGame: () => set({
+  // Players state
+  players: [],
+  setPlayers: (players) => set({ players }),
+  addPlayer: (player) => set((state) => ({
+    players: [...state.players, player]
+  })),
+  removePlayer: (playerId) => set((state) => ({
+    players: state.players.filter(p => p.id !== playerId)
+  })),
+  updatePlayer: (playerId, updates) => set((state) => ({
+    players: state.players.map(p => 
+      p.id === playerId ? { ...p, ...updates } : p
+    )
+  })),
+  
+  // Game flow state
+  currentPhase: 'intro',
+  setCurrentPhase: (phase) => set({ currentPhase: phase }),
+  currentRound: 1,
+  setCurrentRound: (round) => set({ currentRound: round }),
+  
+  // Real-time state
+  isConnected: false,
+  setIsConnected: (connected) => set({ isConnected: connected }),
+  
+  // Utility actions
+  resetGameState: () => set({
     currentGame: null,
-    currentRound: null,
-    currentPhase: 'intro',
     players: [],
-    roundNumber: 1,
-    timeRemaining: 0,
-    isHost: false
+    currentPhase: 'intro',
+    currentRound: 1,
+    isConnected: false
   })
 }));

@@ -1,4 +1,6 @@
 
+// Types centralisés pour l'application KIKADI
+
 export interface User {
   id: string;
   pseudo: string;
@@ -18,9 +20,8 @@ export interface Game {
   ambiance: 'safe' | 'intime' | 'no_filter';
   status: 'waiting' | 'running' | 'ended';
   created_at: string;
-  players_count: number;
-  max_players: number;
-  rounds_total: number;
+  mini_jeux: string[];
+  nb_manches: number;
 }
 
 export interface Player {
@@ -30,7 +31,7 @@ export interface Player {
   is_ready: boolean;
   is_host: boolean;
   score: number;
-  current_phase_state: GamePhase;
+  current_phase_state: string;
   reaction?: string;
   effet_active?: string;
   user?: User;
@@ -40,7 +41,7 @@ export interface Round {
   id: string;
   game_id: string;
   order: number;
-  mini_jeu: MiniJeu;
+  mini_jeu: 'kikadi' | 'kidivrai' | 'kideja' | 'kidenous';
   question_id: string;
   state: 'waiting' | 'answering' | 'voting' | 'revealing' | 'result';
   question?: Question;
@@ -51,7 +52,7 @@ export interface Question {
   content: string;
   type: 'texte' | 'choix' | 'verite';
   ambiance: 'safe' | 'intime' | 'no_filter';
-  jeu: MiniJeu;
+  jeu: 'kikadi' | 'kidivrai' | 'kideja' | 'kidenous';
   validee: boolean;
 }
 
@@ -60,7 +61,7 @@ export interface Answer {
   player_id: string;
   round_id: string;
   content: string;
-  bluff: boolean;
+  is_bluff?: boolean;
 }
 
 export interface Vote {
@@ -71,6 +72,13 @@ export interface Vote {
   vote_type: 'association' | 'bluff' | 'categorie';
 }
 
+export interface Score {
+  id: string;
+  round_id: string;
+  player_id: string;
+  points: number;
+}
+
 export interface ShopItem {
   id: string;
   type: 'avatar' | 'titre' | 'effet';
@@ -78,19 +86,62 @@ export interface ShopItem {
   description: string;
   prix: number;
   rarete: 'common' | 'rare' | 'legendary';
-  icon?: string;
+  emoji?: string;
+  preview?: string;
 }
 
-export type MiniJeu = 'kikadi' | 'kidivrai' | 'kideja' | 'kidenous';
+export interface Inventory {
+  id: string;
+  user_id: string;
+  item_id: string;
+  owned_at: string;
+}
 
+// Types pour les phases de jeu
 export type GamePhase = 
   | 'intro'
-  | 'answering' 
-  | 'voting'
-  | 'revealing'
-  | 'results'
+  | 'question'
+  | 'answer'
+  | 'vote'
+  | 'reveal'
+  | 'result'
   | 'transition';
 
-export type Ambiance = 'safe' | 'intime' | 'no_filter';
+// Types pour les mini-jeux
+export type MiniGame = 'kikadi' | 'kidivrai' | 'kideja' | 'kidenous';
 
-export type GameMode = 'classique' | 'bluff' | 'mixte';
+// Types pour les effets visuels
+export type VisualEffect = 'confetti' | 'shake' | 'zoom' | 'pulse' | 'none';
+
+// Types pour les réactions
+export type ReactionType = '😂' | '😮' | '🤔' | '😱' | '👏' | '🔥' | '💯' | '🎯';
+
+// Types pour les animations
+export type AnimationVariant = 'blue' | 'purple' | 'orange' | 'green' | 'red' | 'rainbow';
+
+// Types pour l'authentification
+export interface AuthState {
+  user: User | null;
+  isLoading: boolean;
+  isAuthenticated: boolean;
+}
+
+// Types pour les statistiques
+export interface PlayerStats {
+  partiesJouees: number;
+  partiesGagnees: number;
+  pointsTotal: number;
+  meilleurScore: number;
+  tempsMoyenParPartie: number;
+  jeuFavori: MiniGame;
+}
+
+// Types pour les notifications
+export interface Notification {
+  id: string;
+  type: 'info' | 'success' | 'warning' | 'error';
+  title: string;
+  message: string;
+  timestamp: string;
+  read: boolean;
+}
