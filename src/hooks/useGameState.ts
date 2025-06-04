@@ -1,31 +1,40 @@
 
 import { useGameStore } from '@/store/gameStore';
-import { GamePhase, Player, Game } from '@/types';
+import { 
+  usePlayers, 
+  useCurrentGame, 
+  useCurrentPhase, 
+  useCurrentRound,
+  useCanAdvancePhase 
+} from '@/store/selectors/gameSelectors';
+import { GamePhase, Player, Game } from '@/types/models';
 
 /**
- * useGameState — Gère la logique globale d'une partie en cours.
- * - Phase en cours
- * - Joueurs présents  
- * - Settings (mode, ambiance, manches)
+ * useGameState — Hook de compatibilité pour l'API existante
+ * 
+ * Utilise les nouveaux sélecteurs atomiques pour optimiser les performances
+ * tout en gardant la même interface que l'ancien hook
  */
 export const useGameState = () => {
+  // Utilisation des sélecteurs atomiques
+  const currentGame = useCurrentGame();
+  const currentRound = useCurrentRound();
+  const currentPhase = useCurrentPhase();
+  const players = usePlayers();
+  const canAdvancePhase = useCanAdvancePhase();
+  
+  // Actions du store
   const {
-    currentGame,
-    currentRound,
-    currentPhase,
-    players,
-    roundNumber,
-    timeRemaining,
-    isHost,
     setCurrentGame,
     setCurrentRound,
     setCurrentPhase,
     setPlayers,
-    setRoundNumber,
     setTimeRemaining,
     setIsHost,
     nextPhase,
-    resetGame
+    resetGame,
+    timeRemaining,
+    isHost
   } = useGameStore();
 
   const getPlayerById = (playerId: string): Player | undefined => {
@@ -36,27 +45,12 @@ export const useGameState = () => {
     return players.filter(player => player.user_id !== currentUserId);
   };
 
-  const canAdvancePhase = (): boolean => {
-    if (!isHost) return false;
-    
-    // Logic to check if all players are ready for next phase
-    switch (currentPhase) {
-      case 'answering':
-        return players.every(player => player.current_phase_state === 'answered');
-      case 'voting':
-        return players.every(player => player.current_phase_state === 'voted');
-      default:
-        return true;
-    }
-  };
-
   return {
-    // State
+    // State (via sélecteurs atomiques)
     currentGame,
     currentRound,
     currentPhase,
     players,
-    roundNumber,
     timeRemaining,
     isHost,
     
@@ -65,7 +59,6 @@ export const useGameState = () => {
     setCurrentRound,
     setCurrentPhase,
     setPlayers,
-    setRoundNumber,
     setTimeRemaining,
     setIsHost,
     nextPhase,
