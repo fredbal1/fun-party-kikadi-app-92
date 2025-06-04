@@ -10,8 +10,23 @@ import { toast } from 'react-hot-toast';
 
 /**
  * Hook principal de gestion de la logique d'une partie KIKADI
- * Centralise toute la logique métier : états, transitions, actions
- * @returns Objet avec phase courante, actions disponibles, handlers
+ * 
+ * Centralise toute la logique métier : états, transitions, actions joueur.
+ * Gère les interactions avec le store global et prépare l'intégration Supabase.
+ * 
+ * @returns {Object} Objet contenant :
+ *   - État : gameId, currentGame, currentPhase, players, etc.
+ *   - Actions : handleSubmitAnswer, handleSubmitVote, handleReaction, etc.
+ *   - Utilitaires : canAdvancePhase, composants d'effets visuels
+ * 
+ * @example
+ * ```tsx
+ * const {
+ *   currentPhase,
+ *   handleSubmitAnswer,
+ *   handleAdvancePhase
+ * } = useGameLogic();
+ * ```
  */
 export const useGameLogic = () => {
   const { gameId } = useParams();
@@ -52,7 +67,7 @@ export const useGameLogic = () => {
 
   /**
    * Initialisation du jeu au montage du composant
-   * TODO: Remplacer par chargement Supabase réel
+   * TODO: Remplacer par chargement Supabase réel via gameService.loadGame()
    */
   useEffect(() => {
     if (gameId && !currentGame) {
@@ -79,8 +94,12 @@ export const useGameLogic = () => {
   }, [gameId, currentGame, setCurrentGame, setCurrentPhase, setCurrentRound]);
 
   /**
-   * Gestion de la soumission d'une réponse
-   * TODO: Envoyer à Supabase via playerService
+   * Soumet une réponse de joueur pour la phase courante
+   * 
+   * @param {string} answer - La réponse du joueur (texte libre)
+   * @throws {Error} Si la soumission échoue
+   * 
+   * TODO: Intégrer playerService.submitAnswer(gameId, playerId, answer)
    */
   const handleSubmitAnswer = useCallback(async (answer: string) => {
     try {
@@ -101,8 +120,12 @@ export const useGameLogic = () => {
   }, [awardAnswerXP, canAdvancePhase, advancePhase]);
 
   /**
-   * Gestion du vote/choix du joueur
-   * TODO: Envoyer à Supabase via playerService
+   * Soumet un vote/choix du joueur pour la phase de vote
+   * 
+   * @param {string} targetId - ID du joueur/réponse ciblé(e)
+   * @throws {Error} Si le vote échoue
+   * 
+   * TODO: Intégrer playerService.submitVote(gameId, playerId, targetId)
    */
   const handleSubmitVote = useCallback(async (targetId: string) => {
     try {
@@ -122,8 +145,12 @@ export const useGameLogic = () => {
   }, [canAdvancePhase, advancePhase]);
 
   /**
-   * Gestion des réactions emoji
-   * TODO: Envoyer à Supabase en temps réel
+   * Envoie une réaction emoji en temps réel
+   * 
+   * @param {string} emoji - L'emoji à envoyer (ex: "😂", "🔥")
+   * @throws {Error} Si l'envoi de réaction échoue
+   * 
+   * TODO: Intégrer realtimeService.sendReaction(gameId, playerId, emoji)
    */
   const handleReaction = useCallback(async (emoji: string) => {
     try {
@@ -138,7 +165,12 @@ export const useGameLogic = () => {
   }, [triggerShake]);
 
   /**
-   * Avancement manuel de phase (bouton host)
+   * Fait avancer manuellement la phase (bouton host uniquement)
+   * Gère la logique de fin de partie et transitions entre manches
+   * 
+   * @throws {Error} Si la transition échoue
+   * 
+   * TODO: Synchroniser avec gameService.updateGamePhase()
    */
   const handleAdvancePhase = useCallback(() => {
     const success = advancePhase();
@@ -173,14 +205,38 @@ export const useGameLogic = () => {
   ]);
 
   /**
-   * Retour au dashboard
+   * Retourne au dashboard principal (abandon de partie)
+   * 
+   * TODO: Intégrer gameService.leaveGame() si nécessaire
    */
   const handleBackToDashboard = useCallback(() => {
     navigate('/dashboard');
   }, [navigate]);
 
+  /**
+   * Réinitialise complètement l'état du jeu
+   * Utilisé en cas d'erreur critique ou redémarrage
+   * 
+   * TODO: Synchroniser avec gameService.resetGame()
+   */
+  const resetGame = useCallback(() => {
+    setCurrentGame(null);
+    setCurrentPhase('intro');
+    setCurrentRound(1);
+    navigate('/dashboard');
+  }, [setCurrentGame, setCurrentPhase, setCurrentRound, navigate]);
+
+  /**
+   * Passe automatiquement à la phase suivante selon la logique du mini-jeu
+   * 
+   * @returns {boolean} true si la transition a réussi, false sinon
+   */
+  const goToNextPhase = useCallback(() => {
+    return advancePhase();
+  }, [advancePhase]);
+
   return {
-    // État
+    // État de la partie
     gameId,
     currentGame,
     currentPhase,
@@ -189,22 +245,26 @@ export const useGameLogic = () => {
     players,
     isLastRound,
     
-    // XP System
+    // Système XP et progression
     currentXP,
     currentLevel,
     progressPercentage,
     
-    // Actions
+    // Actions principales du joueur
     handleSubmitAnswer,
     handleSubmitVote,
     handleReaction,
     handleAdvancePhase,
     handleBackToDashboard,
     
-    // Utilitaires
+    // Actions utilitaires
+    resetGame,
+    goToNextPhase,
+    
+    // Vérifications d'état
     canAdvancePhase,
     
-    // Composants d'effets
+    // Composants d'effets visuels
     ConfettiComponent,
     ShakeWrapper
   };

@@ -6,12 +6,18 @@ import { ArrowLeft } from 'lucide-react';
 import { AnimatedBackground } from '@/components/animations/AnimatedBackground';
 import { PhaseTimer } from '@/components/ui/PhaseTimer';
 import { GamePhaseRenderer } from '@/components/game/GamePhaseRenderer';
+import { DevBotTrigger } from '@/components/dev/DevBotTrigger';
 import { useGameLogic } from '@/hooks/useGameLogic';
 import { PHASE_TIMERS } from '@/constants/gamePhases';
 
 /**
  * Page principale du jeu KIKADI
- * Composant UI pur qui délègue toute la logique métier au hook useGameLogic
+ * 
+ * Composant UI pur qui délègue toute la logique métier au hook useGameLogic.
+ * 
+ * Note sur le lazy loading : Les composants de phases ne nécessitent pas de lazy()
+ * car ils sont légers (< 200 lignes chacun) et sans dépendances lourdes.
+ * Le gain de performance serait négligeable vs la complexité ajoutée.
  */
 const Game: React.FC = () => {
   const {
@@ -158,10 +164,18 @@ const Game: React.FC = () => {
 
         {/* Debug info en développement */}
         {process.env.NODE_ENV === 'development' && (
-          <div className="fixed bottom-4 left-4 bg-black/50 text-white p-2 rounded text-xs">
-            <div>Phase: {currentPhase}</div>
-            <div>Joueurs: {players.length}</div>
-            <div>Can Advance: {canAdvancePhase(currentPhase).toString()}</div>
+          <div className="fixed bottom-4 left-4 space-y-2">
+            {/* Panel debug existant */}
+            <div className="bg-black/50 text-white p-2 rounded text-xs">
+              <div>Phase: {currentPhase}</div>
+              <div>Joueurs: {players.length}</div>
+              <div>Can Advance: {canAdvancePhase(currentPhase).toString()}</div>
+            </div>
+            
+            {/* Bouton bot test */}
+            <DevBotTrigger 
+              onTrigger={() => console.log('Bot triggered from Game.tsx')}
+            />
           </div>
         )}
       </div>

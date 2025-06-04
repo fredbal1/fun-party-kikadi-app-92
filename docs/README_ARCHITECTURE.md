@@ -44,7 +44,60 @@ Le fichier `Game.tsx` a été entièrement refactorisé pour suivre les bonnes p
 }
 ```
 
-## 🎯 Composants de phases
+## 📚 Hooks métier
+
+### Hook principal
+- **`useGameLogic()`** - Hook maître gérant toute la logique de partie
+  - Centralise les interactions utilisateur
+  - Gère les transitions de phase
+  - Interface avec tous les autres hooks spécialisés
+
+### Hooks spécialisés
+- **`useGamePhases()`** - Gestion des transitions de phase  
+  - Validation des passages de phase
+  - Logique spécifique par mini-jeu
+  - Vérification des conditions (tous les joueurs ont répondu, etc.)
+
+- **`useGameStore()`** - État global Zustand
+  - Données de partie, joueurs, phase courante
+  - Actions de mutation d'état
+  - Synchronisation temps réel (prévu)
+
+- **`useXPProgression()`** - Système d'expérience
+  - Attribution de points selon les actions
+  - Calcul de niveau et progression
+  - Récompenses de fin de partie
+
+- **`useVisualEffects()`** - Animations et effets
+  - Confettis, shake, transitions
+  - Effets achetés en boutique (prévu)
+  - Feedback visuel des actions
+
+### Hooks utilitaires
+- **`useParams()`** - Récupération du gameId depuis l'URL
+- **`useNavigate()`** - Navigation React Router
+- **`useDevMode()`** - Mode développeur avec bots (prévu)
+
+## 🎯 Phases de jeu
+
+### Cycle complet d'une manche :
+
+| Phase | Description | Durée | Actions joueur |
+|-------|-------------|-------|----------------|
+| **intro** | Présentation du mini-jeu et règles | 10s | Lecture des règles |
+| **answering** | Saisie de la réponse à la question | 60s | Taper sa réponse |
+| **voting** | Vote/choix selon le mini-jeu | 30s | Voter pour une option |
+| **revealing** | Révélation des résultats | 15s | Envoyer des réactions emoji |
+| **result** | Affichage des scores de manche | 10s | Voir le classement |
+
+### Transitions automatiques :
+- **intro** → **answering** : Automatique après 10s ou clic host
+- **answering** → **voting** : Quand tous les joueurs ont répondu
+- **voting** → **revealing** : Quand tous les joueurs ont voté
+- **revealing** → **result** : Automatique après révélation
+- **result** → **intro** (manche suivante) ou **Results** (fin de partie)
+
+## 🎮 Composants de phases
 
 ### `/src/components/game/phases/`
 
@@ -90,36 +143,47 @@ Phase Components
 3. **Store change** → Re-render automatique du composant
 4. **Phase change** → `GamePhaseRenderer` affiche le nouveau composant
 
-## 🛠️ Hooks utilisés
+## 🔌 Préparation Supabase
 
-### Hooks principaux
-- **`useGameLogic()`** - Logique métier centrale
-- **`useGamePhases()`** - Gestion des transitions de phase  
-- **`useGameStore()`** - État global Zustand
-- **`useXPProgression()`** - Système d'expérience
-- **`useVisualEffects()`** - Animations et effets
+### Services prévus à implémenter :
 
-### Hooks utilitaires
-- **`useParams()`** - Récupération du gameId
-- **`useNavigate()`** - Navigation React Router
-
-## 🔮 Intégration Supabase (TODO)
-
-### Emplacements des TODO Supabase :
-
-#### Dans `useGameLogic.ts` :
+#### `/src/services/supabase/gameService.ts`
 ```typescript
-// TODO: Charger la partie depuis Supabase
-// TODO: Utiliser playerService.submitAnswer(answer)
-// TODO: Utiliser playerService.submitVote(targetId)  
-// TODO: Utiliser playerService.sendReaction(emoji)
+// TODO: Implémenter les méthodes suivantes
+export const gameService = {
+  loadGame: (gameId: string) => Promise<Game>,
+  updateGamePhase: (gameId: string, phase: GamePhase) => Promise<void>,
+  resetGame: (gameId: string) => Promise<void>
+};
 ```
 
-#### Services à créer :
-- **`gameService.loadGame(gameId)`** - Chargement de partie
-- **`playerService.submitAnswer()`** - Envoi de réponse
-- **`playerService.submitVote()`** - Envoi de vote
-- **`realtimeService.subscribeToGame()`** - Écoute temps réel
+#### `/src/services/supabase/playerService.ts`  
+```typescript
+// TODO: Implémenter les méthodes suivantes
+export const playerService = {
+  submitAnswer: (gameId: string, playerId: string, answer: string) => Promise<void>,
+  submitVote: (gameId: string, playerId: string, targetId: string) => Promise<void>,
+  sendReaction: (gameId: string, playerId: string, emoji: string) => Promise<void>
+};
+```
+
+#### `/src/services/supabase/realtimeService.ts`
+```typescript
+// TODO: Implémenter les méthodes suivantes  
+export const realtimeService = {
+  subscribeToGame: (gameId: string, callback: Function) => RealtimeChannel,
+  unsubscribeFromGame: (channel: RealtimeChannel) => void
+};
+```
+
+### Points d'intégration critiques :
+
+#### Dans `useGameLogic.ts` :
+- **Ligne 47** : `TODO: Charger la partie depuis Supabase`
+- **Ligne 65** : `TODO: Utiliser playerService.submitAnswer(answer)`
+- **Ligne 85** : `TODO: Utiliser playerService.submitVote(targetId)`  
+- **Ligne 105** : `TODO: Utiliser playerService.sendReaction(emoji)`
+- **Ligne 125** : `TODO: Synchroniser avec gameService.updateGamePhase()`
 
 #### Tables Supabase concernées :
 - `games` - État de la partie
@@ -148,11 +212,18 @@ Affiché en bas à gauche en mode dev :
 ## ⚡ Performance
 
 ### Optimisations implémentées :
-- **Lazy loading** des composants de phase
+- **Composants de phases** : Pas de lazy loading nécessaire car légers (< 200 lignes chacun)
 - **AnimatePresence** pour les transitions fluides  
 - **Memoization** des handlers avec `useCallback`
 - **État minimal** dans le composant UI
 - **Suspense** avec fallback personnalisé
+
+### Décision sur le lazy loading :
+Les composants de phases (`IntroPhase`, `QuestionPhase`, etc.) ne nécessitent **PAS** de lazy loading car :
+- Chaque composant fait moins de 200 lignes
+- Pas d'imports lourds (pas de lib externe complexe)
+- Déjà optimisés avec `AnimatePresence` 
+- Le gain de performance serait négligeable vs la complexité ajoutée
 
 ### Métriques cibles :
 - **Temps de rendu** < 16ms par phase
