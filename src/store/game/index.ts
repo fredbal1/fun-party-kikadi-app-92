@@ -33,6 +33,6 @@ export type { GameState, GameActions };
  */
 export const useFullGameState = () => useGameStore();
 
-// Re-export pour compatibilité
+// Re-exports pour compatibilité (aliases corrects)
 export { GameState as GameStoreState } from './state';
 export { GameActions as GameStoreActions } from './actions';
