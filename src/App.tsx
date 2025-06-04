@@ -11,6 +11,10 @@ import Dashboard from "./pages/Dashboard";
 import CreateGame from "./pages/CreateGame";
 import Lobby from "./pages/Lobby";
 import Game from "./pages/Game";
+import Results from "./pages/Results";
+import Shop from "./pages/Shop";
+import Admin from "./pages/Admin";
+import AdminDevMode from "./pages/AdminDevMode";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -35,6 +39,10 @@ const App = () => (
           <Route path="/create" element={<CreateGame />} />
           <Route path="/lobby/:gameId" element={<Lobby />} />
           <Route path="/game/:gameId" element={<Game />} />
+          <Route path="/results/:gameId" element={<Results />} />
+          <Route path="/shop" element={<Shop />} />
+          <Route path="/admin" element={<Admin />} />
+          <Route path="/admin/dev-mode" element={<AdminDevMode />} />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />
         </Routes>

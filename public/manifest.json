@@ -1,0 +1,36 @@
+
+{
+  "name": "KIKADI - Le jeu social qui crée du lien",
+  "short_name": "KIKADI",
+  "description": "Jeu multijoueur mobile de 3 à 8 joueurs avec mini-jeux funs : KiKaDi, KiDiVrai, KiDéjà, KiDeNous",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#8b5cf6",
+  "theme_color": "#8b5cf6",
+  "orientation": "portrait",
+  "scope": "/",
+  "icons": [
+    {
+      "src": "/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/icon-512.png", 
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ],
+  "categories": ["games", "entertainment", "social"],
+  "lang": "fr",
+  "screenshots": [
+    {
+      "src": "/screenshot-mobile.png",
+      "sizes": "375x812",
+      "type": "image/png",
+      "form_factor": "narrow"
+    }
+  ]
+}
