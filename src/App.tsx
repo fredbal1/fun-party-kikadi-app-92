@@ -6,7 +6,6 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { Toaster as HotToaster } from 'react-hot-toast';
-import { GameProvider } from '@/context/GameContext';
 import LoadingScreen from "@/components/ui/LoadingScreen";
 import Index from "./pages/Index";
 import Auth from "./pages/Auth";
@@ -25,38 +24,36 @@ const queryClient = new QueryClient();
 
 const App = () => (
   <QueryClientProvider client={queryClient}>
-    <GameProvider>
-      <TooltipProvider>
-        <Toaster />
-        <Sonner />
-        <HotToaster
-          position="top-center"
-          toastOptions={{
-            className: 'bg-white/90 backdrop-blur-sm text-gray-800',
-            duration: 3000,
-          }}
-        />
-        <BrowserRouter>
-          <Suspense fallback={<LoadingScreen />}>
-            <Routes>
-              <Route path="/" element={<Index />} />
-              <Route path="/auth" element={<Auth />} />
-              <Route path="/dashboard" element={<Dashboard />} />
-              <Route path="/create" element={<CreateGame />} />
-              <Route path="/lobby/:gameId" element={<Lobby />} />
-              <Route path="/game/:gameId" element={<GameRemastered />} />
-              <Route path="/game-old/:gameId" element={<Game />} />
-              <Route path="/results/:gameId" element={<Results />} />
-              <Route path="/shop" element={<Shop />} />
-              <Route path="/admin" element={<Admin />} />
-              <Route path="/admin/dev-mode" element={<AdminDevMode />} />
-              {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
-              <Route path="*" element={<NotFound />} />
-            </Routes>
-          </Suspense>
-        </BrowserRouter>
-      </TooltipProvider>
-    </GameProvider>
+    <TooltipProvider>
+      <Toaster />
+      <Sonner />
+      <HotToaster
+        position="top-center"
+        toastOptions={{
+          className: 'bg-white/90 backdrop-blur-sm text-gray-800',
+          duration: 3000,
+        }}
+      />
+      <BrowserRouter>
+        <Suspense fallback={<LoadingScreen />}>
+          <Routes>
+            <Route path="/" element={<Index />} />
+            <Route path="/auth" element={<Auth />} />
+            <Route path="/dashboard" element={<Dashboard />} />
+            <Route path="/create" element={<CreateGame />} />
+            <Route path="/lobby/:gameId" element={<Lobby />} />
+            <Route path="/game/:gameId" element={<GameRemastered />} />
+            <Route path="/game-old/:gameId" element={<Game />} />
+            <Route path="/results/:gameId" element={<Results />} />
+            <Route path="/shop" element={<Shop />} />
+            <Route path="/admin" element={<Admin />} />
+            <Route path="/admin/dev-mode" element={<AdminDevMode />} />
+            {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
+            <Route path="*" element={<NotFound />} />
+          </Routes>
+        </Suspense>
+      </BrowserRouter>
+    </TooltipProvider>
   </QueryClientProvider>
 );
 
