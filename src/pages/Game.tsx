@@ -5,11 +5,16 @@ import { AnimatedBackground } from '@/components/animations/AnimatedBackground';
 import { PhaseTimer } from '@/components/ui/PhaseTimer';
 import { PlayerCard } from '@/components/game/PlayerCard';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Input } from '@/components/ui/input';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useGameState } from '@/hooks/useGameState';
-import { GamePhase } from '@/types';
+import { useXPProgression } from '@/hooks/useXPProgression';
+import { useVisualEffects } from '@/components/effects/VisualEffects';
+import { ReactionSystem } from '@/components/game/ReactionSystem';
+import { KiKaDiGame } from '@/components/games/KiKaDiGame';
+import { KiDiVraiGame } from '@/components/games/KiDiVraiGame';
+import { KiDejaGame } from '@/components/games/KiDejaGame';
+import { KiDeNousGame } from '@/components/games/KiDeNousGame';
+import { GamePhase, MiniJeu } from '@/types';
 import { PHASE_TIMERS } from '@/constants/gamePhases';
 import { toast } from 'react-hot-toast';
 
@@ -18,14 +23,47 @@ const Game = () => {
   const navigate = useNavigate();
   const { currentPhase, setCurrentPhase, nextPhase, players } = useGameState();
   
-  const [currentAnswer, setCurrentAnswer] = useState('');
+  // XP System
+  const {
+    currentXP,
+    currentLevel,
+    progressPercentage,
+    awardAnswerXP,
+    awardCorrectGuessXP,
+    awardGameCompletionXP
+  } = useXPProgression();
+
+  // Visual Effects
+  const {
+    showConfetti,
+    triggerConfetti,
+    triggerShake,
+    ConfettiComponent,
+    ShakeWrapper
+  } = useVisualEffects();
+
+  // Game State
+  const [currentMiniJeu, setCurrentMiniJeu] = useState<MiniJeu>('kikadi');
   const [hasAnswered, setHasAnswered] = useState(false);
   const [selectedPlayer, setSelectedPlayer] = useState<string | null>(null);
-
-  // Mock question data
-  const currentQuestion = "Quelle est votre citation inspirante préférée ?";
-  const currentRound = 1;
+  const [currentRound, setCurrentRound] = useState(1);
   const totalRounds = 5;
+
+  // Mock data - sera remplacé par Supabase
+  const gameData = {
+    kikadi: {
+      question: "Quelle est votre citation inspirante préférée ?"
+    },
+    kidivrai: {
+      statement: "Il est possible de survivre 30 jours sans manger"
+    },
+    kideja: {
+      experiences: []
+    },
+    kidenous: {
+      category: "Le plus susceptible de devenir célèbre"
+    }
+  };
 
   const handlePhaseComplete = () => {
     switch (currentPhase) {
@@ -33,14 +71,14 @@ const Game = () => {
         setCurrentPhase('answering');
         break;
       case 'answering':
-        if (!hasAnswered) {
+        if (!hasAnswered && currentMiniJeu === 'kikadi') {
           toast.error('Vous devez répondre avant de continuer !');
           return;
         }
         setCurrentPhase('voting');
         break;
       case 'voting':
-        if (!selectedPlayer) {
+        if (!selectedPlayer && (currentMiniJeu === 'kikadi' || currentMiniJeu === 'kidenous')) {
           toast.error('Vous devez faire un choix !');
           return;
         }
@@ -48,223 +86,99 @@ const Game = () => {
         break;
       case 'revealing':
         setCurrentPhase('results');
+        triggerConfetti();
+        awardCorrectGuessXP();
         break;
       case 'results':
         if (currentRound < totalRounds) {
           setCurrentPhase('transition');
+          setCurrentRound(prev => prev + 1);
+          // Changer de mini-jeu pour la prochaine manche
+          const jeux: MiniJeu[] = ['kikadi', 'kidivrai', 'kideja', 'kidenous'];
+          const nextJeu = jeux[currentRound % jeux.length];
+          setCurrentMiniJeu(nextJeu);
         } else {
+          awardGameCompletionXP();
           navigate(`/results/${gameId}`);
         }
         break;
       case 'transition':
         setCurrentPhase('intro');
+        setHasAnswered(false);
+        setSelectedPlayer(null);
         break;
     }
   };
 
-  const handleSubmitAnswer = () => {
-    if (!currentAnswer.trim()) {
-      toast.error('Veuillez écrire une réponse !');
-      return;
-    }
+  const handleAnswer = (answer: string) => {
     setHasAnswered(true);
+    awardAnswerXP();
     toast.success('Réponse envoyée !');
   };
 
-  const renderPhaseContent = () => {
-    switch (currentPhase) {
-      case 'intro':
+  const handleVote = (targetId: string) => {
+    setSelectedPlayer(targetId);
+    toast.success('Vote enregistré !');
+  };
+
+  const handleReaction = (emoji: string) => {
+    triggerShake('light');
+    toast.success(`Réaction envoyée: ${emoji}`);
+  };
+
+  const renderMiniJeu = () => {
+    const commonProps = {
+      phase: currentPhase,
+      players,
+      currentRound,
+      totalRounds,
+      onNext: handlePhaseComplete
+    };
+
+    switch (currentMiniJeu) {
+      case 'kikadi':
         return (
-          <motion.div
-            className="text-center space-y-6"
-            initial={{ opacity: 0, scale: 0.8 }}
-            animate={{ opacity: 1, scale: 1 }}
-            transition={{ duration: 0.6 }}
-          >
-            <div className="text-6xl mb-4">🧠</div>
-            <h2 className="text-3xl font-bold text-white">KiKaDi</h2>
-            <p className="text-white/80 text-lg">
-              Devinez qui a écrit quoi !
-            </p>
-            <div className="text-white/60">
-              Manche {currentRound} / {totalRounds}
-            </div>
-          </motion.div>
+          <KiKaDiGame
+            {...commonProps}
+            question={gameData.kikadi.question}
+            onAnswer={handleAnswer}
+            onVote={handleVote}
+            hasAnswered={hasAnswered}
+            selectedVote={selectedPlayer}
+          />
+        );
+      
+      case 'kidivrai':
+        return (
+          <KiDiVraiGame
+            {...commonProps}
+            statement={gameData.kidivrai.statement}
+            onVote={(choice) => {
+              setSelectedPlayer(choice);
+              toast.success(`Vote: ${choice}`);
+            }}
+            selectedChoice={selectedPlayer as 'vrai' | 'faux'}
+          />
         );
 
-      case 'answering':
+      case 'kideja':
         return (
-          <motion.div
-            className="space-y-6"
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.6 }}
-          >
-            <Card className="bg-white/10 backdrop-blur-sm border-white/20">
-              <CardHeader>
-                <CardTitle className="text-white flex items-center">
-                  <span className="mr-2">📝</span>
-                  Question
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <p className="text-white text-lg font-medium mb-6">
-                  {currentQuestion}
-                </p>
-                
-                <div className="space-y-4">
-                  <div>
-                    <label className="text-white text-sm font-medium block mb-2">
-                      Votre réponse
-                    </label>
-                    <Input
-                      value={currentAnswer}
-                      onChange={(e) => setCurrentAnswer(e.target.value)}
-                      placeholder="Écrivez votre réponse..."
-                      className="bg-white/10 border-white/20 text-white placeholder:text-white/50"
-                      disabled={hasAnswered}
-                    />
-                  </div>
-                  
-                  <Button
-                    onClick={handleSubmitAnswer}
-                    className="w-full bg-white text-purple-600 hover:bg-white/90 font-medium"
-                    disabled={hasAnswered}
-                  >
-                    {hasAnswered ? (
-                      <>
-                        <span className="mr-2">✅</span>
-                        Réponse envoyée
-                      </>
-                    ) : (
-                      <>
-                        <span className="mr-2">📤</span>
-                        Valider ma réponse
-                      </>
-                    )}
-                  </Button>
-                </div>
-              </CardContent>
-            </Card>
-          </motion.div>
+          <KiDejaGame
+            {...commonProps}
+            experiences={gameData.kideja.experiences}
+            onVote={handleVote}
+            selectedExperience={selectedPlayer}
+          />
         );
 
-      case 'voting':
-        const mockAnswers = [
-          { id: '1', content: 'La vie est belle quand on la vit pleinement', playerId: 'player1' },
-          { id: '2', content: 'Chaque jour est une nouvelle chance', playerId: 'player2' },
-          { id: '3', content: 'Crois en tes rêves et ils se réaliseront', playerId: 'player3' }
-        ];
-
+      case 'kidenous':
         return (
-          <motion.div
-            className="space-y-6"
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.6 }}
-          >
-            <div className="text-center">
-              <h3 className="text-white text-xl font-bold mb-2">
-                Qui a écrit quoi ?
-              </h3>
-              <p className="text-white/80">
-                Associez chaque réponse à un joueur
-              </p>
-            </div>
-
-            <div className="space-y-3">
-              {mockAnswers.map((answer, index) => (
-                <motion.div
-                  key={answer.id}
-                  initial={{ opacity: 0, x: -20 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  transition={{ duration: 0.4, delay: index * 0.1 }}
-                >
-                  <Card 
-                    className={`cursor-pointer transition-all ${
-                      selectedPlayer === answer.id
-                        ? 'bg-white/20 border-white'
-                        : 'bg-white/10 border-white/20 hover:bg-white/15'
-                    }`}
-                    onClick={() => setSelectedPlayer(answer.id)}
-                  >
-                    <CardContent className="p-4">
-                      <p className="text-white font-medium">
-                        "{answer.content}"
-                      </p>
-                    </CardContent>
-                  </Card>
-                </motion.div>
-              ))}
-            </div>
-          </motion.div>
-        );
-
-      case 'revealing':
-        return (
-          <motion.div
-            className="text-center space-y-6"
-            initial={{ opacity: 0, scale: 0.8 }}
-            animate={{ opacity: 1, scale: 1 }}
-            transition={{ duration: 0.6 }}
-          >
-            <div className="text-6xl mb-4">🎭</div>
-            <h2 className="text-2xl font-bold text-white">Révélation !</h2>
-            <p className="text-white/80">
-              Découvrez les vraies réponses...
-            </p>
-            
-            <motion.div
-              className="space-y-3"
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              transition={{ delay: 1 }}
-            >
-              <Card className="bg-green-500/20 border-green-400/50">
-                <CardContent className="p-4">
-                  <div className="flex items-center justify-between">
-                    <span className="text-white">Marie a écrit:</span>
-                    <span className="text-green-200">+10 points</span>
-                  </div>
-                  <p className="text-white font-medium mt-2">
-                    "La vie est belle quand on la vit pleinement"
-                  </p>
-                </CardContent>
-              </Card>
-            </motion.div>
-          </motion.div>
-        );
-
-      case 'results':
-        return (
-          <motion.div
-            className="space-y-6"
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.6 }}
-          >
-            <div className="text-center">
-              <h3 className="text-white text-xl font-bold mb-2">
-                Résultats de la manche
-              </h3>
-              <div className="text-white/80">
-                Manche {currentRound} / {totalRounds}
-              </div>
-            </div>
-
-            <div className="space-y-3">
-              {players.map((player, index) => (
-                <motion.div
-                  key={player.id}
-                  initial={{ opacity: 0, x: -20 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  transition={{ duration: 0.4, delay: index * 0.1 }}
-                >
-                  <PlayerCard player={player} showScore />
-                </motion.div>
-              ))}
-            </div>
-          </motion.div>
+          <KiDeNousGame
+            {...commonProps}
+            category={gameData.kidenous.category}
+            onVote={handleVote}
+            selectedPlayer={selectedPlayer}
+          />
         );
 
       default:
@@ -272,8 +186,42 @@ const Game = () => {
     }
   };
 
+  const renderTransitionPhase = () => (
+    <motion.div
+      className="text-center space-y-6"
+      initial={{ opacity: 0, scale: 0.8 }}
+      animate={{ opacity: 1, scale: 1 }}
+      transition={{ duration: 0.6 }}
+    >
+      <div className="text-6xl mb-4">🎯</div>
+      <h2 className="text-3xl font-bold text-white">Manche suivante !</h2>
+      <p className="text-white/80 text-lg">
+        Préparez-vous pour le prochain défi...
+      </p>
+      <div className="text-white/60">
+        Manche {currentRound} / {totalRounds}
+      </div>
+      
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 1 }}
+      >
+        <Button
+          onClick={handlePhaseComplete}
+          className="bg-white text-purple-600 hover:bg-white/90 font-bold"
+          size="lg"
+        >
+          Commencer !
+        </Button>
+      </motion.div>
+    </motion.div>
+  );
+
   return (
     <AnimatedBackground variant="purple">
+      <ConfettiComponent />
+      
       <div className="min-h-screen px-6 py-8">
         {/* Game header */}
         <motion.div
@@ -285,6 +233,9 @@ const Game = () => {
           <div className="text-white">
             <div className="text-sm opacity-80">Partie {gameId}</div>
             <div className="font-semibold">Manche {currentRound}</div>
+            <div className="text-xs opacity-60">
+              XP: {currentXP} | Niveau {currentLevel}
+            </div>
           </div>
           
           {currentPhase !== 'intro' && currentPhase !== 'transition' && (
@@ -295,41 +246,71 @@ const Game = () => {
           )}
         </motion.div>
 
-        {/* Main content */}
-        <div className="max-w-lg mx-auto">
-          <AnimatePresence mode="wait">
+        {/* XP Progress Bar */}
+        <motion.div
+          className="mb-6"
+          initial={{ opacity: 0, y: -10 }}
+          animate={{ opacity: 1, y: 0 }}
+        >
+          <div className="bg-white/10 rounded-full h-2 overflow-hidden">
             <motion.div
-              key={currentPhase}
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -20 }}
-              transition={{ duration: 0.4 }}
-            >
-              {renderPhaseContent()}
-            </motion.div>
-          </AnimatePresence>
+              className="bg-gradient-to-r from-yellow-400 to-orange-500 h-full rounded-full"
+              initial={{ width: 0 }}
+              animate={{ width: `${progressPercentage}%` }}
+              transition={{ duration: 0.5 }}
+            />
+          </div>
+        </motion.div>
 
-          {/* Next phase button */}
-          {(currentPhase === 'intro' || currentPhase === 'revealing' || currentPhase === 'results') && (
-            <motion.div
-              className="mt-8"
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              transition={{ delay: 2 }}
-            >
-              <Button
-                onClick={handlePhaseComplete}
-                className="w-full bg-white text-purple-600 hover:bg-white/90 font-bold"
-                size="lg"
+        {/* Main content */}
+        <ShakeWrapper>
+          <div className="max-w-lg mx-auto">
+            <AnimatePresence mode="wait">
+              <motion.div
+                key={`${currentPhase}-${currentMiniJeu}-${currentRound}`}
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -20 }}
+                transition={{ duration: 0.4 }}
               >
-                {currentPhase === 'results' 
-                  ? currentRound < totalRounds ? 'Manche suivante' : 'Voir les résultats finaux'
-                  : 'Continuer'
-                }
-              </Button>
-            </motion.div>
-          )}
-        </div>
+                {currentPhase === 'transition' ? renderTransitionPhase() : renderMiniJeu()}
+              </motion.div>
+            </AnimatePresence>
+
+            {/* Reaction System */}
+            {currentPhase === 'revealing' && (
+              <motion.div
+                className="mt-8"
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 1 }}
+              >
+                <ReactionSystem onReaction={handleReaction} />
+              </motion.div>
+            )}
+
+            {/* Next phase button for certain phases */}
+            {(currentPhase === 'intro' || currentPhase === 'results') && (
+              <motion.div
+                className="mt-8"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                transition={{ delay: 2 }}
+              >
+                <Button
+                  onClick={handlePhaseComplete}
+                  className="w-full bg-white text-purple-600 hover:bg-white/90 font-bold"
+                  size="lg"
+                >
+                  {currentPhase === 'results' 
+                    ? currentRound < totalRounds ? 'Manche suivante' : 'Voir les résultats finaux'
+                    : 'Continuer'
+                  }
+                </Button>
+              </motion.div>
+            )}
+          </div>
+        </ShakeWrapper>
       </div>
     </AnimatedBackground>
   );
