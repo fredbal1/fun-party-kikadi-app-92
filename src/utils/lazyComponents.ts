@@ -4,24 +4,17 @@ import { lazy } from 'react';
 /**
  * Lazy loading des pages principales pour optimiser le bundle initial
  */
-export const LazyPages = {
-  // Pages principales
-  Dashboard: lazy(() => import('@/pages/Dashboard')),
-  CreateGame: lazy(() => import('@/pages/CreateGame')),
-  Lobby: lazy(() => import('@/pages/Lobby')),
-  Game: lazy(() => import('@/pages/Game')),
-  GameRemastered: lazy(() => import('@/pages/GameRemastered')),
-  Results: lazy(() => import('@/pages/Results')),
-  Shop: lazy(() => import('@/pages/Shop')),
-  
-  // Pages d'administration
-  Admin: lazy(() => import('@/pages/Admin')),
-  AdminDevMode: lazy(() => import('@/pages/AdminDevMode')),
-  
-  // Composants lourds
-  AnimatedBackground: lazy(() => import('@/components/animations/AnimatedBackground')),
-  VisualEffects: lazy(() => import('@/components/effects/VisualEffects'))
-};
+export const LazyHome = lazy(() => import('../pages/Index'));
+export const LazyAuth = lazy(() => import('../pages/Auth'));
+export const LazyDashboard = lazy(() => import('../pages/Dashboard'));
+export const LazyCreateGame = lazy(() => import('../pages/CreateGame'));
+export const LazyLobby = lazy(() => import('../pages/Lobby'));
+export const LazyGame = lazy(() => import('../pages/Game'));
+export const LazyGameRemastered = lazy(() => import('../pages/GameRemastered'));
+export const LazyResults = lazy(() => import('../pages/Results'));
+export const LazyShop = lazy(() => import('../pages/Shop'));
+export const LazyAdmin = lazy(() => import('../pages/Admin'));
+export const LazyAdminDevMode = lazy(() => import('../pages/AdminDevMode'));
 
 /**
  * Composant de fallback pour le lazy loading
@@ -35,31 +28,3 @@ export const LazyFallback = () => (
     </div>
   </div>
 );
-
-/**
- * Configuration du lazy loading avec préchargement
- */
-export const preloadComponent = (componentName: keyof typeof LazyPages) => {
-  const Component = LazyPages[componentName];
-  
-  // Précharger le composant au survol ou focus
-  return () => {
-    // TypeScript note: Les composants lazy de React n'exposent pas toujours preload
-    // Cette fonction est un placeholder pour une future implémentation
-    console.log(`Preloading ${componentName}...`);
-  };
-};
-
-/**
- * Utilitaire pour lazy loading conditionnel
- */
-export const conditionalLazy = <T extends React.ComponentType<any>>(
-  condition: boolean,
-  lazyComponent: () => Promise<{ default: T }>,
-  fallbackComponent: T
-): React.ComponentType<any> => {
-  if (condition) {
-    return lazy(lazyComponent);
-  }
-  return fallbackComponent;
-};
