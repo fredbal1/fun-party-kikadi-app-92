@@ -1,5 +1,6 @@
 
 import '@testing-library/jest-dom'
+import { vi } from 'vitest'
 
 // Configuration globale pour les tests
 // Mock de certaines fonctions si nécessaire
