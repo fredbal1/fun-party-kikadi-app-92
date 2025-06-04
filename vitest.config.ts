@@ -22,6 +22,7 @@ export default defineConfig({
         'dist/',
       ],
     },
+    types: ['vitest/globals', '@testing-library/jest-dom'],
   },
   resolve: {
     alias: {

@@ -44,7 +44,9 @@ export const preloadComponent = (componentName: keyof typeof LazyPages) => {
   
   // Précharger le composant au survol ou focus
   return () => {
-    Component.preload?.();
+    if ('preload' in Component && typeof Component.preload === 'function') {
+      Component.preload();
+    }
   };
 };
 
@@ -55,7 +57,7 @@ export const conditionalLazy = <T extends React.ComponentType<any>>(
   condition: boolean,
   lazyComponent: () => Promise<{ default: T }>,
   fallbackComponent: T
-) => {
+): React.ComponentType<any> => {
   if (condition) {
     return lazy(lazyComponent);
   }

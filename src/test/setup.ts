@@ -27,3 +27,8 @@ vi.mock('framer-motion', () => ({
   },
   AnimatePresence: ({ children }: { children: React.ReactNode }) => children,
 }))
+
+// Déclaration globale pour les tests
+declare global {
+  const vi: typeof import('vitest').vi;
+}
