@@ -1,6 +1,6 @@
 
-import '@testing-library/jest-dom'
-import { vi } from 'vitest'
+import '@testing-library/jest-dom';
+import { vi } from 'vitest';
 
 // Configuration globale pour les tests
 // Mock de certaines fonctions si nécessaire
@@ -16,7 +16,7 @@ Object.defineProperty(window, 'matchMedia', {
     removeEventListener: vi.fn(),
     dispatchEvent: vi.fn(),
   })),
-})
+});
 
 // Mock pour les animations Framer Motion en test
 vi.mock('framer-motion', () => ({
@@ -26,4 +26,4 @@ vi.mock('framer-motion', () => ({
     button: 'button',
   },
   AnimatePresence: ({ children }: { children: React.ReactNode }) => children,
-}))
+}));
