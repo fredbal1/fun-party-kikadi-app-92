@@ -11,9 +11,6 @@ export default defineConfig({
     environment: 'jsdom',
     setupFiles: ['./src/test/setup.ts'],
     css: true,
-    typecheck: {
-      include: ['**/*.{test,spec}.?(c|m)[jt]s?(x)']
-    },
     coverage: {
       provider: 'v8',
       reporter: ['text', 'json', 'html'],
