@@ -1,24 +1,23 @@
 
-import { useEffect, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { useGamePhases } from '@/hooks/useGamePhases';
+import { useCurrentGame, useCurrentPhase, useGameProgress } from '@/store/selectors/gameSelectors';
 import { useXPProgression } from '@/hooks/useXPProgression';
 import { useVisualEffects } from '@/components/effects/VisualEffects';
-import { GamePhase, MiniGameType } from '@/types';
-import { toast } from 'react-hot-toast';
-import { 
-  useCurrentGame, 
-  useCurrentPhase, 
-  usePlayers,
-  useGameProgress,
-  useGameStore 
-} from '@/store/selectors/gameSelectors';
+
+// Import des hooks de phase spécialisés
+import { useIntroPhaseLogic } from '@/hooks/phases/useIntroPhaseLogic';
+import { useQuestionPhaseLogic } from '@/hooks/phases/useQuestionPhaseLogic';
+import { useVotingPhaseLogic } from '@/hooks/phases/useVotingPhaseLogic';
+import { useRevealPhaseLogic } from '@/hooks/phases/useRevealPhaseLogic';
+import { useResultPhaseLogic } from '@/hooks/phases/useResultPhaseLogic';
 
 /**
  * Hook principal de gestion de la logique d'une partie KIKADI
  * 
- * Utilise désormais les sélecteurs atomiques optimisés pour éviter
- * les re-rendus inutiles et améliorer les performances.
+ * Orchestre les différents hooks de phase et fournit une interface unifiée
+ * pour l'interaction avec les composants de jeu.
+ * 
+ * Utilise les sélecteurs atomiques optimisés pour éviter les re-rendus inutiles.
  */
 export const useGameLogic = () => {
   const { gameId } = useParams();
@@ -27,185 +26,120 @@ export const useGameLogic = () => {
   // Sélecteurs atomiques optimisés
   const currentGame = useCurrentGame();
   const currentPhase = useCurrentPhase();
-  const players = usePlayers();
   const { currentRound, totalRounds } = useGameProgress();
-  
-  // Actions du store (uniquement celles nécessaires)
-  const {
-    setCurrentGame,
-    setCurrentPhase,
-    setCurrentRound
-  } = useGameStore();
 
-  // Hooks spécialisés
-  const { advancePhase, canAdvancePhase } = useGamePhases();
+  // Hooks spécialisés par phase
+  const introLogic = useIntroPhaseLogic();
+  const questionLogic = useQuestionPhaseLogic();
+  const votingLogic = useVotingPhaseLogic();
+  const revealLogic = useRevealPhaseLogic();
+  const resultLogic = useResultPhaseLogic();
+
+  // Hooks transversaux
   const {
     currentXP,
     currentLevel,
     progressPercentage,
-    awardAnswerXP,
-    awardCorrectGuessXP,
-    awardGameCompletionXP
   } = useXPProgression();
   
   const {
-    triggerConfetti,
-    triggerShake,
     ConfettiComponent,
     ShakeWrapper
   } = useVisualEffects();
 
-  // État dérivé
+  /**
+   * Soumet une réponse selon la phase courante
+   * Route vers le bon hook de phase
+   */
+  const handleSubmitAnswer = (answer: string, isBluff?: boolean) => {
+    switch (currentPhase) {
+      case 'answering':
+        return questionLogic.submitAnswer(answer, isBluff);
+      default:
+        console.warn('Submit answer called in wrong phase:', currentPhase);
+        return Promise.resolve(false);
+    }
+  };
+
+  /**
+   * Soumet un vote selon la phase courante
+   * Route vers le bon hook de phase
+   */
+  const handleSubmitVote = (targetId: string, voteType?: string) => {
+    switch (currentPhase) {
+      case 'voting':
+        return votingLogic.submitVote(targetId, voteType);
+      default:
+        console.warn('Submit vote called in wrong phase:', currentPhase);
+        return Promise.resolve(false);
+    }
+  };
+
+  /**
+   * Envoie une réaction selon la phase courante
+   * Route vers le bon hook de phase
+   */
+  const handleReaction = (emoji: string) => {
+    switch (currentPhase) {
+      case 'revealing':
+        return revealLogic.sendReaction(emoji);
+      default:
+        console.warn('Reaction sent in wrong phase:', currentPhase);
+        return Promise.resolve(false);
+    }
+  };
+
+  /**
+   * Fait avancer la phase courante
+   * Route vers le bon hook de phase
+   */
+  const handleAdvancePhase = () => {
+    switch (currentPhase) {
+      case 'intro':
+        return introLogic.proceedToAnswering();
+      case 'answering':
+        return questionLogic.proceedToVoting();
+      case 'voting':
+        return votingLogic.proceedToRevealing();
+      case 'revealing':
+        return revealLogic.proceedToResults();
+      case 'result':
+        return resultLogic.progressGame();
+      default:
+        console.warn('Advance phase called in unknown phase:', currentPhase);
+        return false;
+    }
+  };
+
+  /**
+   * Retourne au dashboard principal
+   */
+  const handleBackToDashboard = () => {
+    navigate('/dashboard');
+  };
+
+  /**
+   * Vérifie si la phase courante peut avancer
+   * Délègue aux hooks de phase spécialisés
+   */
+  const canAdvanceCurrentPhase = () => {
+    switch (currentPhase) {
+      case 'intro':
+        return introLogic.canProceed();
+      case 'answering':
+        return questionLogic.canProceedToVoting;
+      case 'voting':
+        return votingLogic.canProceedToRevealing;
+      case 'revealing':
+      case 'result':
+        return true;
+      default:
+        return false;
+    }
+  };
+
+  // État dérivé pour l'interface
   const isLastRound = currentRound >= totalRounds;
-
-  /**
-   * Initialisation du jeu au montage du composant
-   * TODO: Remplacer par chargement Supabase réel via gameService.fetchGameFromDb()
-   */
-  useEffect(() => {
-    if (gameId && !currentGame) {
-      // TODO: Charger la partie depuis Supabase
-      const mockGame = {
-        id: gameId,
-        host_id: 'user-1',
-        mode: 'classique' as const,
-        ambiance: 'safe' as const,
-        status: 'running' as const,
-        mini_jeux: ['kikadi', 'kidivrai'],
-        nb_manches: 5,
-        current_round: 1,
-        current_phase: 'intro' as GamePhase,
-        current_mini_jeu: 'kikadi' as MiniGameType,
-        created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString()
-      };
-      
-      setCurrentGame(mockGame);
-      setCurrentPhase('intro');
-      setCurrentRound(1);
-    }
-  }, [gameId, currentGame, setCurrentGame, setCurrentPhase, setCurrentRound]);
-
-  /**
-   * Soumet une réponse de joueur pour la phase courante
-   * TODO: Intégrer gameService.savePlayerAnswer()
-   */
-  const handleSubmitAnswer = useCallback(async (answer: string) => {
-    try {
-      // TODO: Utiliser gameService.savePlayerAnswer(answer)
-      console.log('Answer submitted:', answer);
-      
-      awardAnswerXP();
-      toast.success('Réponse envoyée !');
-      
-      // Avancer automatiquement si possible
-      if (canAdvancePhase('voting')) {
-        advancePhase();
-      }
-    } catch (error) {
-      console.error('Error submitting answer:', error);
-      toast.error('Erreur lors de l\'envoi de la réponse');
-    }
-  }, [awardAnswerXP, canAdvancePhase, advancePhase]);
-
-  /**
-   * Soumet un vote/choix du joueur pour la phase de vote
-   * TODO: Intégrer gameService.savePlayerVote()
-   */
-  const handleSubmitVote = useCallback(async (targetId: string) => {
-    try {
-      // TODO: Utiliser gameService.savePlayerVote(targetId)
-      console.log('Vote submitted:', targetId);
-      
-      toast.success('Vote enregistré !');
-      
-      // Avancer automatiquement si possible
-      if (canAdvancePhase('revealing')) {
-        advancePhase();
-      }
-    } catch (error) {
-      console.error('Error submitting vote:', error);
-      toast.error('Erreur lors du vote');
-    }
-  }, [canAdvancePhase, advancePhase]);
-
-  /**
-   * Envoie une réaction emoji en temps réel
-   * TODO: Intégrer realtimeService.sendReaction()
-   */
-  const handleReaction = useCallback(async (emoji: string) => {
-    try {
-      // TODO: Utiliser playerService.sendReaction(emoji)
-      console.log('Reaction sent:', emoji);
-      
-      triggerShake('light');
-      toast.success(`Réaction envoyée: ${emoji}`);
-    } catch (error) {
-      console.error('Error sending reaction:', error);
-    }
-  }, [triggerShake]);
-
-  /**
-   * Fait avancer manuellement la phase (bouton host uniquement)
-   * TODO: Synchroniser avec gameService.updateGameInDb()
-   */
-  const handleAdvancePhase = useCallback(() => {
-    const success = advancePhase();
-    
-    if (!success && currentPhase === 'result') {
-      // Fin de partie ou manche suivante
-      if (isLastRound) {
-        awardGameCompletionXP();
-        navigate(`/results/${gameId}`);
-      } else {
-        // Manche suivante
-        setCurrentRound(currentRound + 1);
-        setCurrentPhase('intro');
-        // TODO: Changer de mini-jeu selon la logique métier
-      }
-    } else if (currentPhase === 'revealing') {
-      triggerConfetti();
-      awardCorrectGuessXP();
-    }
-  }, [
-    advancePhase, 
-    currentPhase, 
-    isLastRound, 
-    awardGameCompletionXP, 
-    navigate, 
-    gameId,
-    setCurrentRound,
-    setCurrentPhase,
-    currentRound,
-    triggerConfetti,
-    awardCorrectGuessXP
-  ]);
-
-  /**
-   * Retourne au dashboard principal (abandon de partie)
-   * TODO: Intégrer gameService.leaveGame() si nécessaire
-   */
-  const handleBackToDashboard = useCallback(() => {
-    navigate('/dashboard');
-  }, [navigate]);
-
-  /**
-   * Réinitialise complètement l'état du jeu
-   * TODO: Synchroniser avec gameService.cleanupGameData()
-   */
-  const resetGame = useCallback(() => {
-    setCurrentGame(null);
-    setCurrentPhase('intro');
-    setCurrentRound(1);
-    navigate('/dashboard');
-  }, [setCurrentGame, setCurrentPhase, setCurrentRound, navigate]);
-
-  /**
-   * Passe automatiquement à la phase suivante selon la logique du mini-jeu
-   */
-  const goToNextPhase = useCallback(() => {
-    return advancePhase();
-  }, [advancePhase]);
 
   return {
     // État de la partie (via sélecteurs atomiques)
@@ -214,7 +148,6 @@ export const useGameLogic = () => {
     currentPhase,
     currentRound,
     totalRounds,
-    players,
     isLastRound,
     
     // Système XP et progression
@@ -222,19 +155,24 @@ export const useGameLogic = () => {
     currentLevel,
     progressPercentage,
     
-    // Actions principales du joueur
+    // Actions principales du joueur (orchestrées)
     handleSubmitAnswer,
     handleSubmitVote,
     handleReaction,
     handleAdvancePhase,
     handleBackToDashboard,
     
-    // Actions utilitaires
-    resetGame,
-    goToNextPhase,
-    
     // Vérifications d'état
-    canAdvancePhase,
+    canAdvancePhase: canAdvanceCurrentPhase,
+    
+    // Accès direct aux hooks de phase (pour les composants avancés)
+    phaseLogic: {
+      intro: introLogic,
+      question: questionLogic,
+      voting: votingLogic,
+      reveal: revealLogic,
+      result: resultLogic,
+    },
     
     // Composants d'effets visuels
     ConfettiComponent,
