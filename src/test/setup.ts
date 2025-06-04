@@ -2,6 +2,14 @@
 import '@testing-library/jest-dom';
 import { vi } from 'vitest';
 
+// Extend vitest's expect with jest-dom matchers
+import type { TestingLibraryMatchers } from '@testing-library/jest-dom/matchers';
+
+declare module 'vitest' {
+  interface Assertion<T = any> extends jest.Matchers<void>, TestingLibraryMatchers<T, void> {}
+  interface AsymmetricMatchersContaining extends TestingLibraryMatchers<any, void> {}
+}
+
 // Configuration globale pour les tests
 // Mock de certaines fonctions si nécessaire
 Object.defineProperty(window, 'matchMedia', {
