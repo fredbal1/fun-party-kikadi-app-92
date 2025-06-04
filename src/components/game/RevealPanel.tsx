@@ -1,10 +1,9 @@
-
 import { motion, AnimatePresence } from 'framer-motion';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Player } from '@/types';
 import { useState } from 'react';
-import { Heart, ThumbsUp, Laugh, Surprised } from 'lucide-react';
+import { Heart, ThumbsUp, Laugh, Zap } from 'lucide-react';
 
 interface RevealItem {
   id: string;
@@ -28,7 +27,7 @@ const REACTIONS = [
   { emoji: '❤️', icon: Heart, label: 'J\'adore' },
   { emoji: '👍', icon: ThumbsUp, label: 'Bien joué' },
   { emoji: '😂', icon: Laugh, label: 'Hilarant' },
-  { emoji: '😮', icon: Surprised, label: 'Surprenant' }
+  { emoji: '😮', icon: Zap, label: 'Surprenant' }
 ];
 
 export const RevealPanel = ({ 
